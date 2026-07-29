@@ -4,13 +4,15 @@ This directory contains resources necessary to deploy processes conforming to th
 
 ## Sleep EOAP
 
-> [!NOTE] This example was copied and slightly adapted from eozilla's local test service implementation and can be found [under this URL](https://github.com/eo-tools/eozilla/blob/main/wraptile/src/wraptile/services/local/testing.py).
+> [!NOTE]
+> This example was copied and slightly adapted from eozilla's local test service implementation and can be found [under this URL](https://github.com/eo-tools/eozilla/blob/main/wraptile/src/wraptile/services/local/testing.py).
 
 The sleep EOAP is a simple process that calls a Python function that sleeps for a given amount of time. By registering the accompanying [CWL workflow](./sleep/sleep-workflow.cwl), the process will be available at `/processes/sleep-workflow`.
 
 ## Pimes EOAP
 
-> [!NOTE] This example was copied and slightly adapted from eozilla's local test service implementation and can be found [under this URL](https://github.com/eo-tools/eozilla/blob/main/wraptile/src/wraptile/services/local/testing.py).
+> [!NOTE]
+> This example was copied and slightly adapted from eozilla's local test service implementation and can be found [under this URL](https://github.com/eo-tools/eozilla/blob/main/wraptile/src/wraptile/services/local/testing.py).
 
 The primes EOAP is a simple process that calculates prime numbers between a lower and an upper bound. By registering the accompanying [CWL workflow](./primes/primes-workflow.cwl), the process will be available at `/processes/primes-workflow`.
 
