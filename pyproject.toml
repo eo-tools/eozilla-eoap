@@ -29,7 +29,6 @@ classifiers = [
   "Topic :: Software Development",
   "Topic :: Scientific/Engineering",
   "Typing :: Typed",
-  "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX",
   "Operating System :: Unix",
   "Operating System :: MacOS",
@@ -44,6 +43,8 @@ dependencies = [
   # Eozilla dependency
   "gavicore",
   "wraptile",
+  "cwl-utils>=0.42,<0.43",
+  "cwltool>=3.2.20260413085819,<4",
 ]
 
 [project.urls]

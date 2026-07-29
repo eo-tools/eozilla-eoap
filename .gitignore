@@ -1,3 +1,7 @@
+# Local non-project files
+registry/
+runs/
+
 # pixi environments
 .pixi/*
 !.pixi/config.toml

@@ -1,20 +1,8 @@
 version: 7
 platforms:
 - name: linux-64
-  virtual-packages:
-  - __unix=0=0
-  - __linux=4.18
-  - __glibc=2.28
-  - __archspec=0=x86_64
 - name: osx-64
-  virtual-packages:
-  - __unix=0=0
-  - __osx=13.0
-  - __archspec=0=x86_64
 - name: win-64
-  virtual-packages:
-  - __win=10.0
-  - __archspec=0=x86_64
 environments:
   default:
     channels:
@@ -355,10 +343,26 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zarr-3.1.6-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zict-3.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
+      - pypi: .
       - pypi: ../eozilla/gavicore
       - pypi: ../eozilla/procodile
       - pypi: ../eozilla/wraptile
-      - pypi: ./
+      - pypi: https://files.pythonhosted.org/packages/0b/35/1cceccc5fcb50fa2ed53e2aa278cd032f3902682a73e763fb1ac3be8e6fa/rich_argparse-1.8.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/10/c2/6604a71269e0c1bd75656d5a001432d16f2cc5b8c057140ec797155c295e/rdflib-7.6.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/12/f6/5b8ec087cd9cfa9449491ec83f76fb6b7006b4dff57d2ba8aaab330fe8e4/argcomplete-3.7.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2a/7f/a946aa4f8752b37102b41e64dca18a1976ac705c3a0d1dfe74d820a02552/mistune-3.2.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/3d/6f/221654a39431edc7e9685702ab06fbb22bb313629e0187c0ed4462ba8af7/schema_salad-8.9.20260417192335-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/42/3d/ef4dcfffd22d27a61805d8ed9f7fb888495bc6aa88648fa07c1eaa5586b6/lxml-6.1.1-cp314-cp314-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/7e/32/a7125fb28c4261a627f999d5fb4afff25b523800faed2c30979949d6facd/pydot-4.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8e/b4/23f8462c72e514563f5fd949e38a9e45bcc86fb59bf4b88240ba0ef02026/cwl_utils-0.42-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8e/fb/2c4c618185be2bda327f9dacd16b3122cc938809f19df7be840595d0e584/prov-1.5.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a7/06/3d6badcf13db419e25b07041d9c7b4a2c331d3f4e7134445ec5df57714cd/coloredlogs-15.0.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ac/3e/61d11b779e4e83ee8661439af070f6f138060cd41f0346a0a70432f9e55c/cwl_upgrader-1.2.15-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/d4/74/3d6534c6ce0802bf085a32908b093e6a4123443050299bcc6e3828a9bf3e/cwltool-3.2.20260413085819-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ef/79/c45f2d53efe6ada1110cf6f9fca095e4ff47a0454444aefdde6ac4789179/cachecontrol-0.14.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f0/0f/310fb31e39e2d734ccaa2c0fb981ee41f7bd5056ce9bc29b2248bd569169/humanfriendly-10.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f9/38/8b6fc7a8153cb49eb3a9a13acfa9eeb6cc476e37888781e593e6f02ac05e/spython-0.3.14-py3-none-any.whl
       osx-64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-doc-0.0.4-pyhcf101f3_0.conda
@@ -675,10 +679,26 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zlib-1.3.2-hbb4bfdb_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zlib-ng-2.3.3-h8bce59a_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.7-h3eecb57_6.conda
+      - pypi: .
       - pypi: ../eozilla/gavicore
       - pypi: ../eozilla/procodile
       - pypi: ../eozilla/wraptile
-      - pypi: ./
+      - pypi: https://files.pythonhosted.org/packages/0b/35/1cceccc5fcb50fa2ed53e2aa278cd032f3902682a73e763fb1ac3be8e6fa/rich_argparse-1.8.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/10/c2/6604a71269e0c1bd75656d5a001432d16f2cc5b8c057140ec797155c295e/rdflib-7.6.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/12/f6/5b8ec087cd9cfa9449491ec83f76fb6b7006b4dff57d2ba8aaab330fe8e4/argcomplete-3.7.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2a/7f/a946aa4f8752b37102b41e64dca18a1976ac705c3a0d1dfe74d820a02552/mistune-3.2.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/3d/6f/221654a39431edc7e9685702ab06fbb22bb313629e0187c0ed4462ba8af7/schema_salad-8.9.20260417192335-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7e/32/a7125fb28c4261a627f999d5fb4afff25b523800faed2c30979949d6facd/pydot-4.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8e/b4/23f8462c72e514563f5fd949e38a9e45bcc86fb59bf4b88240ba0ef02026/cwl_utils-0.42-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8e/fb/2c4c618185be2bda327f9dacd16b3122cc938809f19df7be840595d0e584/prov-1.5.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/93/cf/5630b5e4be7d2e6bee8efe83865c925221103cf0221303b104ce134b01e2/lxml-6.1.1-cp314-cp314-macosx_10_15_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/a7/06/3d6badcf13db419e25b07041d9c7b4a2c331d3f4e7134445ec5df57714cd/coloredlogs-15.0.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ac/3e/61d11b779e4e83ee8661439af070f6f138060cd41f0346a0a70432f9e55c/cwl_upgrader-1.2.15-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/d4/74/3d6534c6ce0802bf085a32908b093e6a4123443050299bcc6e3828a9bf3e/cwltool-3.2.20260413085819-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ef/79/c45f2d53efe6ada1110cf6f9fca095e4ff47a0454444aefdde6ac4789179/cachecontrol-0.14.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f0/0f/310fb31e39e2d734ccaa2c0fb981ee41f7bd5056ce9bc29b2248bd569169/humanfriendly-10.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f9/38/8b6fc7a8153cb49eb3a9a13acfa9eeb6cc476e37888781e593e6f02ac05e/spython-0.3.14-py3-none-any.whl
       win-64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-doc-0.0.4-pyhcf101f3_0.conda
@@ -993,10 +1013,27 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zlib-1.3.2-hfd05255_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zlib-ng-2.3.3-h0261ad2_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
+      - pypi: .
       - pypi: ../eozilla/gavicore
       - pypi: ../eozilla/procodile
       - pypi: ../eozilla/wraptile
-      - pypi: ./
+      - pypi: https://files.pythonhosted.org/packages/0b/35/1cceccc5fcb50fa2ed53e2aa278cd032f3902682a73e763fb1ac3be8e6fa/rich_argparse-1.8.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/10/c2/6604a71269e0c1bd75656d5a001432d16f2cc5b8c057140ec797155c295e/rdflib-7.6.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/12/f6/5b8ec087cd9cfa9449491ec83f76fb6b7006b4dff57d2ba8aaab330fe8e4/argcomplete-3.7.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2a/7f/a946aa4f8752b37102b41e64dca18a1976ac705c3a0d1dfe74d820a02552/mistune-3.2.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/3d/6f/221654a39431edc7e9685702ab06fbb22bb313629e0187c0ed4462ba8af7/schema_salad-8.9.20260417192335-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7e/32/a7125fb28c4261a627f999d5fb4afff25b523800faed2c30979949d6facd/pydot-4.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8e/b4/23f8462c72e514563f5fd949e38a9e45bcc86fb59bf4b88240ba0ef02026/cwl_utils-0.42-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8e/fb/2c4c618185be2bda327f9dacd16b3122cc938809f19df7be840595d0e584/prov-1.5.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a7/06/3d6badcf13db419e25b07041d9c7b4a2c331d3f4e7134445ec5df57714cd/coloredlogs-15.0.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ac/3e/61d11b779e4e83ee8661439af070f6f138060cd41f0346a0a70432f9e55c/cwl_upgrader-1.2.15-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b8/ce/3cf9a827342269f54d405a6202397de63f07c69cbd6ce7d183a3f0cba1e9/lxml-6.1.1-cp314-cp314-win_amd64.whl
+      - pypi: https://files.pythonhosted.org/packages/d4/74/3d6534c6ce0802bf085a32908b093e6a4123443050299bcc6e3828a9bf3e/cwltool-3.2.20260413085819-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ef/79/c45f2d53efe6ada1110cf6f9fca095e4ff47a0454444aefdde6ac4789179/cachecontrol-0.14.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f0/0f/310fb31e39e2d734ccaa2c0fb981ee41f7bd5056ce9bc29b2248bd569169/humanfriendly-10.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f7/5e/35c856e186b74678c24927847ad9895a51f1bc02a0c6126477a6c6040064/pyreadline3-3.5.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f9/38/8b6fc7a8153cb49eb3a9a13acfa9eeb6cc476e37888781e593e6f02ac05e/spython-0.3.14-py3-none-any.whl
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
   build_number: 20
@@ -12423,33 +12460,7 @@ packages:
     - zstd >=1.5.7,<1.6.0a0
   size: 388453
   timestamp: 1764777142545
-- pypi: ../eozilla/gavicore
-  name: gavicore
-  requires_dist:
-  - pydantic
-  - pyyaml
-  - typer>=0.26.0,<1
-  requires_python: '>=3.11'
-- pypi: ../eozilla/procodile
-  name: procodile
-  requires_dist:
-  - pydantic
-  - pyyaml
-  - typer>=0.26.0,<1
-  - gavicore>=0.2.0.dev0
-  requires_python: '>=3.10'
-- pypi: ../eozilla/wraptile
-  name: wraptile
-  requires_dist:
-  - fastapi
-  - pydantic
-  - pyyaml
-  - typer>=0.26.0,<1
-  - uvicorn
-  - gavicore>=0.2.0.dev0
-  - procodile>=0.2.0.dev0
-  requires_python: '>=3.11'
-- pypi: ./
+- pypi: .
   name: eozilla-eoap
   requires_dist:
   - fastapi
@@ -12459,4 +12470,274 @@ packages:
   - uvicorn
   - gavicore
   - wraptile
+  - cwl-utils>=0.42,<0.43
+  - cwltool>=3.2.20260413085819,<4
   requires_python: '>=3.11'
+- pypi: ../eozilla/gavicore
+  name: gavicore
+  requires_dist:
+  - click
+  - pydantic
+  - pyyaml
+  - typer
+  requires_python: '>=3.10'
+- pypi: ../eozilla/procodile
+  name: procodile
+  requires_dist:
+  - pydantic
+  - pyyaml
+  - typer
+  - gavicore>=0.1.2.dev0
+  requires_python: '>=3.10'
+- pypi: ../eozilla/wraptile
+  name: wraptile
+  requires_dist:
+  - fastapi
+  - pydantic
+  - pyyaml
+  - typer
+  - uvicorn
+  - gavicore>=0.1.2.dev0
+  - procodile>=0.1.2.dev0
+  requires_python: '>=3.11'
+- pypi: https://files.pythonhosted.org/packages/0b/35/1cceccc5fcb50fa2ed53e2aa278cd032f3902682a73e763fb1ac3be8e6fa/rich_argparse-1.8.0-py3-none-any.whl
+  name: rich-argparse
+  version: 1.8.0
+  sha256: d2a3ce7854654e2253c578763ab0a32f05016f23a55fadba7b9a91b6c0e92142
+  requires_dist:
+  - rich>=11.0.0
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/10/c2/6604a71269e0c1bd75656d5a001432d16f2cc5b8c057140ec797155c295e/rdflib-7.6.0-py3-none-any.whl
+  name: rdflib
+  version: 7.6.0
+  sha256: 30c0a3ebf4c0e09215f066be7246794b6492e054e782d7ac2a34c9f70a15e0dd
+  requires_dist:
+  - berkeleydb>=18.1.0,<19.0.0 ; extra == 'berkeleydb'
+  - html5rdf>=1.2,<2 ; extra == 'html'
+  - httpx>=0.28.1,<0.29.0 ; extra == 'graphdb' or extra == 'rdf4j'
+  - isodate>=0.7.2,<1.0.0 ; python_full_version < '3.11'
+  - lxml>=4.3,<6.0 ; extra == 'lxml'
+  - networkx>=2,<4 ; extra == 'networkx'
+  - orjson>=3.9.14,<4 ; extra == 'orjson'
+  - pyparsing>=2.1.0,<4
+  requires_python: '>=3.8.1'
+- pypi: https://files.pythonhosted.org/packages/12/f6/5b8ec087cd9cfa9449491ec83f76fb6b7006b4dff57d2ba8aaab330fe8e4/argcomplete-3.7.0-py3-none-any.whl
+  name: argcomplete
+  version: 3.7.0
+  sha256: d8f0f22d2a8a7caa383be1e22b6caf1ecaf0ebd10d8f83cc125e36540c95830c
+  requires_dist:
+  - coverage ; extra == 'test'
+  - mypy ; extra == 'test'
+  - pexpect ; extra == 'test'
+  - ruff ; extra == 'test'
+  - wheel ; extra == 'test'
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/2a/7f/a946aa4f8752b37102b41e64dca18a1976ac705c3a0d1dfe74d820a02552/mistune-3.2.1-py3-none-any.whl
+  name: mistune
+  version: 3.2.1
+  sha256: 78cdb0ba5e938053ccf63651b352508d2efa9411dc8810bfb05f2dc5140c0048
+  requires_dist:
+  - typing-extensions ; python_full_version < '3.11'
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/3d/6f/221654a39431edc7e9685702ab06fbb22bb313629e0187c0ed4462ba8af7/schema_salad-8.9.20260417192335-py3-none-any.whl
+  name: schema-salad
+  version: 8.9.20260417192335
+  sha256: dd7f5b1aa4d6f3ab61e7fd83d942af22d83afecc5f24f48b2027810efe6bd76f
+  requires_dist:
+  - requests>=1.0
+  - ruamel-yaml>=0.17.6,<0.20
+  - rdflib>=4.2.2,<8.0.0
+  - mistune>=3,<3.3
+  - cachecontrol[filecache]>=0.13.1,<0.15
+  - mypy-extensions
+  - rich-argparse
+  - sphinx>=2.2 ; extra == 'docs'
+  - sphinx-rtd-theme>=1 ; extra == 'docs'
+  - pytest<10 ; extra == 'docs'
+  - sphinx-autoapi ; extra == 'docs'
+  - sphinx-autodoc-typehints ; extra == 'docs'
+  - sphinxcontrib-autoprogram ; extra == 'docs'
+  - black ; extra == 'pycodegen'
+  requires_python: '>=3.10,<3.15'
+- pypi: https://files.pythonhosted.org/packages/42/3d/ef4dcfffd22d27a61805d8ed9f7fb888495bc6aa88648fa07c1eaa5586b6/lxml-6.1.1-cp314-cp314-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
+  name: lxml
+  version: 6.1.1
+  sha256: 9395002973c827b3ed67db77e6ec09f092919a587022174554096a269378fb13
+  requires_dist:
+  - cssselect>=0.7 ; extra == 'cssselect'
+  - html5lib ; extra == 'html5'
+  - beautifulsoup4 ; extra == 'htmlsoup'
+  - lxml-html-clean ; extra == 'html-clean'
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/7e/32/a7125fb28c4261a627f999d5fb4afff25b523800faed2c30979949d6facd/pydot-4.0.1-py3-none-any.whl
+  name: pydot
+  version: 4.0.1
+  sha256: 869c0efadd2708c0be1f916eb669f3d664ca684bc57ffb7ecc08e70d5e93fee6
+  requires_dist:
+  - pyparsing>=3.1.0
+  - ruff ; extra == 'lint'
+  - mypy ; extra == 'types'
+  - pydot[lint] ; extra == 'dev'
+  - pydot[types] ; extra == 'dev'
+  - chardet ; extra == 'dev'
+  - parameterized ; extra == 'dev'
+  - pydot[dev] ; extra == 'tests'
+  - tox ; extra == 'tests'
+  - pytest ; extra == 'tests'
+  - pytest-cov ; extra == 'tests'
+  - pytest-xdist[psutil] ; extra == 'tests'
+  - zest-releaser[recommended] ; extra == 'release'
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/8e/b4/23f8462c72e514563f5fd949e38a9e45bcc86fb59bf4b88240ba0ef02026/cwl_utils-0.42-py3-none-any.whl
+  name: cwl-utils
+  version: '0.42'
+  sha256: 3ded53f626268d1113895f59e91a6ce2d8a1568823b4db506b4814ae2e4904c4
+  requires_dist:
+  - cwl-upgrader>=1.2.3
+  - packaging
+  - rdflib
+  - requests
+  - ruamel-yaml>=0.17.6,<0.20
+  - schema-salad>=8.8.20250205075315,<9
+  - typing-extensions>=4.10.0
+  - cwlformat ; extra == 'pretty'
+  - cwlformat ; extra == 'testing'
+  - cwltool ; extra == 'testing'
+  - jsonschema>=4.21.1 ; extra == 'testing'
+  - pytest-cov ; extra == 'testing'
+  - pytest-mock>=1.10.0 ; extra == 'testing'
+  - pytest-xdist[psutil] ; extra == 'testing'
+  - pytest<10 ; extra == 'testing'
+  - udocker ; extra == 'testing'
+  requires_python: '>=3.10,<3.15'
+- pypi: https://files.pythonhosted.org/packages/8e/fb/2c4c618185be2bda327f9dacd16b3122cc938809f19df7be840595d0e584/prov-1.5.1-py2.py3-none-any.whl
+  name: prov
+  version: 1.5.1
+  sha256: 5c930cbbd05424aa3066d336dc31d314dd9fa0280caeab064288e592ed716bea
+  requires_dist:
+  - lxml
+  - networkx
+  - python-dateutil
+  - rdflib>=4.2.1
+  - six>=1.9.0
+  - pydot>=1.2.0 ; extra == 'dot'
+- pypi: https://files.pythonhosted.org/packages/93/cf/5630b5e4be7d2e6bee8efe83865c925221103cf0221303b104ce134b01e2/lxml-6.1.1-cp314-cp314-macosx_10_15_x86_64.whl
+  name: lxml
+  version: 6.1.1
+  sha256: c08e5c694306507275f2290073350c4f32e383db15213b2c69e7ff39c1193840
+  requires_dist:
+  - cssselect>=0.7 ; extra == 'cssselect'
+  - html5lib ; extra == 'html5'
+  - beautifulsoup4 ; extra == 'htmlsoup'
+  - lxml-html-clean ; extra == 'html-clean'
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/a7/06/3d6badcf13db419e25b07041d9c7b4a2c331d3f4e7134445ec5df57714cd/coloredlogs-15.0.1-py2.py3-none-any.whl
+  name: coloredlogs
+  version: 15.0.1
+  sha256: 612ee75c546f53e92e70049c9dbfcc18c935a2b9a53b66085ce9ef6a6e5c0934
+  requires_dist:
+  - humanfriendly>=9.1
+  - capturer>=2.4 ; extra == 'cron'
+  requires_python: '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*'
+- pypi: https://files.pythonhosted.org/packages/ac/3e/61d11b779e4e83ee8661439af070f6f138060cd41f0346a0a70432f9e55c/cwl_upgrader-1.2.15-py3-none-any.whl
+  name: cwl-upgrader
+  version: 1.2.15
+  sha256: 42ae4546a433a7439f56282942e3a9369d08d9a2ad31d86cddb1bb298e28640d
+  requires_dist:
+  - ruamel-yaml>=0.16.0,<0.20
+  - schema-salad
+  - pytest<10 ; extra == 'testing'
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl
+  name: ruamel-yaml
+  version: 0.19.1
+  sha256: 27592957fedf6e0b62f281e96effd28043345e0e66001f97683aa9a40c667c93
+  requires_dist:
+  - ruamel-yaml-clib ; platform_python_implementation == 'CPython' and extra == 'oldlibyaml'
+  - ruamel-yaml-clibz>=0.3.7 ; platform_python_implementation == 'CPython' and extra == 'libyaml'
+  - ruamel-yaml-jinja2>=0.2 ; extra == 'jinja2'
+  - ryd ; extra == 'docs'
+  - mercurial>5.7 ; extra == 'docs'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/b8/ce/3cf9a827342269f54d405a6202397de63f07c69cbd6ce7d183a3f0cba1e9/lxml-6.1.1-cp314-cp314-win_amd64.whl
+  name: lxml
+  version: 6.1.1
+  sha256: b2d444f2e66624d68e9c6b211e28a76e22fff5fcabcfff4deac18b529b7d4137
+  requires_dist:
+  - cssselect>=0.7 ; extra == 'cssselect'
+  - html5lib ; extra == 'html5'
+  - beautifulsoup4 ; extra == 'htmlsoup'
+  - lxml-html-clean ; extra == 'html-clean'
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/d4/74/3d6534c6ce0802bf085a32908b093e6a4123443050299bcc6e3828a9bf3e/cwltool-3.2.20260413085819-py3-none-any.whl
+  name: cwltool
+  version: 3.2.20260413085819
+  sha256: 2ed9b586b2d9cda0870a3c2b9cba958943ef3fde53805f935cb20888dc8b87a3
+  requires_dist:
+  - requests>=2.6.1
+  - ruamel-yaml>=0.16,<0.20
+  - rdflib>=4.2.2,<7.7.0
+  - schema-salad>=8.9,<9
+  - prov==1.5.1
+  - mypy-extensions
+  - psutil>=5.6.6
+  - coloredlogs
+  - pydot>=1.4.1
+  - argcomplete>=1.12.0
+  - pyparsing!=3.0.2
+  - cwl-utils>=0.41
+  - spython>=0.3.0
+  - rich-argparse
+  - pygments>=2.20.0
+  - typing-extensions>=4.1.0
+  - galaxy-tool-util>=22.1.2,!=23.0.1,!=23.0.2,!=23.0.3,!=23.0.4,!=23.0.5,<26.1 ; extra == 'deps'
+  - galaxy-util<26.1 ; extra == 'deps'
+  - pillow ; extra == 'deps'
+  requires_python: '>=3.10,<3.15'
+- pypi: https://files.pythonhosted.org/packages/ef/79/c45f2d53efe6ada1110cf6f9fca095e4ff47a0454444aefdde6ac4789179/cachecontrol-0.14.4-py3-none-any.whl
+  name: cachecontrol
+  version: 0.14.4
+  sha256: b7ac014ff72ee199b5f8af1de29d60239954f223e948196fa3d84adaffc71d2b
+  requires_dist:
+  - requests>=2.16.0
+  - msgpack>=0.5.2,<2.0.0
+  - cachecontrol[filecache,redis] ; extra == 'dev'
+  - cherrypy ; extra == 'dev'
+  - cheroot>=11.1.2 ; extra == 'dev'
+  - codespell ; extra == 'dev'
+  - furo ; extra == 'dev'
+  - mypy ; extra == 'dev'
+  - pytest ; extra == 'dev'
+  - pytest-cov ; extra == 'dev'
+  - ruff ; extra == 'dev'
+  - sphinx ; extra == 'dev'
+  - sphinx-copybutton ; extra == 'dev'
+  - types-redis ; extra == 'dev'
+  - types-requests ; extra == 'dev'
+  - filelock>=3.8.0 ; extra == 'filecache'
+  - redis>=2.10.5 ; extra == 'redis'
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/f0/0f/310fb31e39e2d734ccaa2c0fb981ee41f7bd5056ce9bc29b2248bd569169/humanfriendly-10.0-py2.py3-none-any.whl
+  name: humanfriendly
+  version: '10.0'
+  sha256: 1697e1a8a8f550fd43c2865cd84542fc175a61dcb779b6fee18cf6b6ccba1477
+  requires_dist:
+  - monotonic ; python_full_version == '2.7.*'
+  - pyreadline ; python_full_version < '3.8' and sys_platform == 'win32'
+  - pyreadline3 ; python_full_version >= '3.8' and sys_platform == 'win32'
+  requires_python: '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*'
+- pypi: https://files.pythonhosted.org/packages/f7/5e/35c856e186b74678c24927847ad9895a51f1bc02a0c6126477a6c6040064/pyreadline3-3.5.6-py3-none-any.whl
+  name: pyreadline3
+  version: 3.5.6
+  sha256: 8449b734232e42a5dcd74048e39b60db2839a4c38cf3ae2bf7707d58b5389c0d
+  requires_dist:
+  - build ; extra == 'dev'
+  - flake8 ; extra == 'dev'
+  - mypy ; extra == 'dev'
+  - pytest ; extra == 'dev'
+  - twine ; extra == 'dev'
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/f9/38/8b6fc7a8153cb49eb3a9a13acfa9eeb6cc476e37888781e593e6f02ac05e/spython-0.3.14-py3-none-any.whl
+  name: spython
+  version: 0.3.14
+  sha256: 72968583e498bc2a51f9acd0ed6bc0d7d1f7ccd491feaba5e2f7d944bc51da3a
