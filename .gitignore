@@ -1,6 +1,7 @@
 # Local non-project files
 registry/
 runs/
+eoap-service/
 
 # pixi environments
 .pixi/*
