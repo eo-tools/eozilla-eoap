@@ -66,7 +66,7 @@ class LocalEoapService(ServiceBase, DruService):
         self.executor: Optional[ThreadPoolExecutor | ProcessPoolExecutor] = None
         self.cwl_runner: Runner = cwl_runner
 
-        self.process_registry: Optional[LocalEaopRegistry] = process_registry
+        self.process_registry: Optional[Registry] = process_registry
         # (
         #     process_registry or LocalEaopRegistry(mkdtemp(), False)
         # )
