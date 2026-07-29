@@ -1,0 +1,46 @@
+$graph:
+- class: Workflow
+  cwlVersion: v1.2
+  label: Echo User Input to File
+  doc: The echo EOAP is a simple process that simply echos the user's input to a files and returns it. By registering the accompanying CWL workflow, the process will be available at `/processes/echo-workflow`.
+  id: echo-workflow
+  inputs:
+    message:
+      label: message to echo
+      doc: some very length description of what this argument does
+      type: string
+      default: Hello World
+  outputs:
+    hello_out:
+      outputSource: echo/hello_out
+      type: File
+  steps:
+    echo:
+      in:
+        message: message
+      out:
+      - hello_out
+      run: '#echo-tool'
+- baseCommand:
+  - echo
+  class: CommandLineTool
+  id: '#echo-tool'
+  inputs:
+    message:
+      inputBinding:
+        position: 1
+      type: string
+  label: Echo Tool
+  outputs:
+    hello_out:
+      outputBinding:
+        glob: hello.txt
+      type: File
+  requirements:
+    DockerRequirement:
+      dockerPull: alpine:3.22
+  stdout: hello.txt
+$namespaces:
+  s: https://schema.org/
+cwlVersion: v1.2
+s:version: 0.0.1
