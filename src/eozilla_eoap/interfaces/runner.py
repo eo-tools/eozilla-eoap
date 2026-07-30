@@ -1,12 +1,9 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Dict
 
 
 class Runner(ABC):
-    persistent_output_directory: str
-    """Path to location where artifacts
-    generated during execution are presistently stored."""
-
     @abstractmethod
     def run(self, job_id: str, *args, **kwargs) -> Dict:
         """Submit a job to the CWL backend"""
@@ -25,3 +22,9 @@ class Runner(ABC):
         Args:
             job_id (str): Job whose artifacts are to be removed
         """
+
+    @property
+    @abstractmethod
+    def persistent_output_directory(self) -> Path:
+        """Path to location where artifacts
+        generated during execution are presistently stored."""

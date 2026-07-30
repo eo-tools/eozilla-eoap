@@ -158,8 +158,12 @@ class CallbackExecutor(SingleJobExecutor):
 
 
 class CwlToolRunner(Runner):
-    def __init__(self, persistent_output_directory: Path):
-        self.persistent_output_directory: Path = persistent_output_directory
+    def __init__(self, output_directory: Path):
+        self._persistent_output_directory: Path = output_directory
+
+    @property
+    def persistent_output_directory(self) -> Path:
+        return self._persistent_output_directory
 
     def run(
         self,
