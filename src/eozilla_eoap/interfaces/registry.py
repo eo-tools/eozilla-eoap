@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
+from .process import Process
+
 
 class Registry(ABC):
     @abstractmethod
@@ -20,7 +22,7 @@ class Registry(ABC):
         """
 
     @abstractmethod
-    def insert(self, *args, **kwargs) -> Any:
+    def create(self, *args, **kwargs) -> Process:
         """Add a new process to the registry.
 
         Raises:
@@ -35,7 +37,30 @@ class Registry(ABC):
         """
 
     @abstractmethod
-    def update(self, *args, **kwargs) -> Any:
+    def read(self, id: str, *args, **kwargs) -> Process:
+        """Return a single registered process.
+
+        Raises:
+            KeyError: The process does not exist in the registry.
+
+        Returns:
+            Process: Internal representation of the process.m
+        """
+
+    @abstractmethod
+    def read_all(self, *args, **kwargs) -> Dict[str, Process]:
+        """Get a dictionary containing all registered processes.
+
+        The dictonary must use process identifiers as presented to
+        the user as the keys and a process description as the
+        corresponding values.
+
+        Returns:
+            Dict[str, Process]: Mapping of process identifier to process description.
+        """
+
+    @abstractmethod
+    def update(self, *args, **kwargs) -> Process:
         """Replace a process in the registry.
 
         Raises:
@@ -50,22 +75,10 @@ class Registry(ABC):
         """
 
     @abstractmethod
-    def delete(self, *args, **kwargs) -> None:
+    def delete(self, id: str, *args, **kwargs) -> None:
         """Delete a process from the registry.
 
         Raises:
             KeyError: The process to be deleted does not exist
                 in the registry.
-        """
-
-    @abstractmethod
-    def get_all(self, *args, **kwargs) -> Dict[str, Any]:
-        """Get a dictionary containing all registered processes.
-
-        The dictonary must use process identifiers as presented to
-        the user as the keys and a process description as the
-        corresponding values.
-
-        Returns:
-            Dict[str, Any]: Mapping of process identifier to process description.
         """
