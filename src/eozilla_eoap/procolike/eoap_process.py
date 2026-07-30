@@ -37,8 +37,16 @@ class EoapProcess(Process):
 
     source: FileUrl | None
     entrypoint: str
-    model_class: type[BaseModel]
-    description: ProcessDescription
+    _model_class: type[BaseModel]
+    _description: ProcessDescription
+
+    @property
+    def model_class(self) -> type[BaseModel]:
+        return self._model_class
+
+    @property
+    def description(self) -> ProcessDescription:
+        return self._description
 
     @classmethod
     def create(
@@ -70,8 +78,8 @@ class EoapProcess(Process):
         return EoapProcess(
             source=Path(future_source, id + ".cwl").as_uri(),
             entrypoint=entrypoint,
-            model_class=model_class,
-            description=ProcessDescription(
+            _model_class=model_class,
+            _description=ProcessDescription(
                 id=id,
                 version=version,
                 mutable=True,

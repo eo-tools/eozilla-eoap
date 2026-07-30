@@ -1,5 +1,8 @@
 from abc import ABC, abstractclassmethod, abstractmethod
 
+from gavicore.models import ProcessDescription
+from pydantic import BaseModel
+
 
 class Process(ABC):
     @abstractclassmethod
@@ -9,3 +12,11 @@ class Process(ABC):
         Returns:
             Process: An instance of the implemented process.
         """
+
+    @property
+    @abstractmethod
+    def model_class(self) -> type[BaseModel]: ...
+
+    @property
+    @abstractmethod
+    def description(self) -> ProcessDescription: ...
