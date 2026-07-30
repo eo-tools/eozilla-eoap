@@ -179,6 +179,9 @@ def test_eoap_requirement_11(cwl_object: dict) -> bool:
         if v in ["https://schema.org", "https://schema.org/"]:
             schema_org_key = k
             break
+    
+    if not schema_org_key:
+        return False
 
     return cwl_object.get(schema_org_key + ":version") is not None
 
