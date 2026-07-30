@@ -262,7 +262,13 @@ class LocalEoapService(ServiceBase, DruService):
                 # type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/duplicated-process",
                 detail="Submitted process id already exists in registry.",
             ) from None
-        except (EntrypointNotFoundError, NamespaceNotFoundError):
+        except EntrypointNotFoundError:
+            raise ServiceException(
+                status_code=400,
+                # type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/workflow-not-found",
+                detail=f"Workflow entrypoint {w} not found"
+            )
+        except NamespaceNotFoundError:
             raise ServiceException(
                 status_code=422,
                 detail="Mailformed CWL document.",
@@ -304,7 +310,13 @@ class LocalEoapService(ServiceBase, DruService):
                 type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/immutable-process",
                 detail=e.args,
             ) from e
-        except (EntrypointNotFoundError, NamespaceNotFoundError):
+        except EntrypointNotFoundError:
+            raise ServiceException(
+                status_code=400,
+                # type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/workflow-not-found",
+                detail=f"Workflow entrypoint {w} not found"
+            )
+        except NamespaceNotFoundError:
             raise ServiceException(
                 status_code=422,
                 detail="Mailformed CWL document.",
