@@ -21,7 +21,7 @@ class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
         return iter(self._eoaps)
 
     def __getitem__(self, name: str) -> EoapProcess:
-        return self._eoaps[name]
+        return self._eoaps.get(name)
 
     def __len__(self) -> int:
         return len(self._eoaps)
@@ -74,7 +74,7 @@ class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
         return new_eoap
 
     def read(self, name: str) -> EoapProcess:
-        return self._eoaps[name]
+        return self._eoaps.get(name)
 
     def read_all(self) -> Dict[str, EoapProcess]:
         return self._eoaps
