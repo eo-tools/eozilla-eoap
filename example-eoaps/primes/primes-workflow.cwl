@@ -59,3 +59,7 @@ $namespaces:
   s: https://schema.org/
 cwlVersion: v1.2
 s:version: 0.0.1
+s:keywords:
+- Prime Numbers
+- Python
+- Sieve of Eratosthenes

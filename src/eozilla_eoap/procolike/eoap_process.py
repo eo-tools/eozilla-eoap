@@ -47,7 +47,7 @@ class EoapProcess(Process):
         current_content: dict,
         entrypoint: str | None = None,
     ) -> "EoapProcess":
-        id, version, title, description = cls._extract_process_metadata(
+        id, version, title, description, keywords = cls._extract_process_metadata(
             current_content, entrypoint
         )
 
@@ -79,6 +79,7 @@ class EoapProcess(Process):
                 description=description,
                 inputs=input_description,
                 outputs=output_description,
+                keywords=keywords,
             ),
         )
 
@@ -100,11 +101,15 @@ class EoapProcess(Process):
                 schema_org_key = k
                 break
 
+        if not schema_org_key:
+            raise NamespaceNotFoundError("schema.org namespace not found")
+
         return (
             process_entry_node.id.split("#", 1)[-1],
             cwl.get(schema_org_key + ":version"),
             process_entry_node.label,
             process_entry_node.doc,
+            cwl.get(schema_org_key + ":keywords"),
         )
 
     @classmethod
