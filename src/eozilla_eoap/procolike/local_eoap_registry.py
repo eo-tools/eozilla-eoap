@@ -40,7 +40,7 @@ class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
 
         return
 
-    def insert(
+    def create(
         self, contents: dict, entrypoint: str, ignore_existing: bool = False
     ) -> EoapProcess:
         new_eoap: EoapProcess = EoapProcess.create(self.path, contents, entrypoint)
@@ -73,8 +73,14 @@ class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
 
         return new_eoap
 
+    def read(self, name: str) -> EoapProcess:
+        return self._eoaps[name]
+
+    def read_all(self) -> Dict[str, EoapProcess]:
+        return self._eoaps
+
     def update(self, contents: dict, entrypoint: str) -> EoapProcess:
-        return self.insert(
+        return self.create(
             contents=contents, entrypoint=entrypoint, ignore_existing=True
         )
 
@@ -103,9 +109,6 @@ class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
         del self._eoaps[name]
 
         return
-
-    def get_all(self) -> Dict[str, EoapProcess]:
-        return self._eoaps
 
     def _rebuild_internal_mapping(self) -> None:
         """Rebuid internal _eoaps dictionary from persistent registry entries.

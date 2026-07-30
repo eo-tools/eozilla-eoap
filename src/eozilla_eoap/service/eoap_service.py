@@ -253,7 +253,7 @@ class LocalEoapService(ServiceBase, DruService):
         eoap: dict = await load_and_validate_from_body(request, w=w)
 
         try:
-            process: EoapProcess = self.process_registry.insert(
+            process: EoapProcess = self.process_registry.create(
                 eoap, entrypoint=w, ignore_existing=False
             )
         except KeyError:
@@ -410,7 +410,7 @@ class LocalEoapService(ServiceBase, DruService):
         return future_result
 
     def _get_process(self, process_id: str) -> EoapProcess:
-        process = self.process_registry.get(process_id)
+        process = self.process_registry.read(process_id)
         if process is None:
             raise ServiceException(404, detail=f"Process {process_id!r} does not exist")
         if not process.description.mutable:
