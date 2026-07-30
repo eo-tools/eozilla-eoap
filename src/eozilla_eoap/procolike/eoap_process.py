@@ -19,9 +19,11 @@ from pydantic import (
     model_validator,
 )
 
+from eozilla_eoap.interfaces import Process
+
 
 @dataclass
-class EoapProcess:
+class EoapProcess(Process):
     """
     An EOAP process comprises a process description and a link to
     executable code in form of a CWL document.
