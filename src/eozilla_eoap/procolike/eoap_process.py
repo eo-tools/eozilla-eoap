@@ -302,6 +302,7 @@ def _resolve_ogc_schema_from_cwl_utils(
                     nullable=nullable,
                     default=default,
                     contentMediaType=format,
+                    format="url",
                 ),
             )
         elif cwl_type == "Directory":
@@ -313,7 +314,7 @@ def _resolve_ogc_schema_from_cwl_utils(
                     nullable=nullable,
                     default=default,
                     contentMediaType=format,
-                    format="uri",
+                    format="url",
                 ),
             )
         else:
