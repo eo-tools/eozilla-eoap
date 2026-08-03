@@ -158,45 +158,41 @@ class CallbackExecutor(SingleJobExecutor):
 
 
 class CwlToolRunner(Runner):
-    def __init__(self, output_directory: Path):
-        self._persistent_output_directory: Path = output_directory
-
-    @property
-    def persistent_output_directory(self) -> Path:
-        return self._persistent_output_directory
-
     def run(
         self,
         job_id: str,
         *,
         process: EoapProcess,
         process_arguments: Dict[str, Any],
-        context: Optional[Job] = None,  # NOTE: this inverts the ownership relation, no?
+        persistent_output_directory: path,
+        # Question: Does the line below invert the owenership relation?
+        #           Though, the original
+        context: Optional[Job] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         # NOTE: The process arguments have already been validated when the owning job
         #       object was created
-        out_dir: Path = Path(self.persistent_output_directory, job_id, "out")
-        out_dir.mkdir(parents=True, exist_ok=False)
-        log_dir: Path = Path(self.persistent_output_directory, job_id, "log")
-        log_dir.mkdir(parents=True, exist_ok=False)
+        out_dir: Path = Path(persistent_output_directory, "out")
+        log_dir: Path = Path(persistent_output_directory, "log")
 
         with (
             CwltoolLogger(str(Path(log_dir, "run.log"))),
             open(Path(log_dir, "stdout"), "wt") as proc_stdout,
             open(Path(log_dir, "stderr"), "wt") as proc_stderr,
         ):
+            runtime_context: RuntimeContext = RuntimeContext(
+                {
+                    "outdir": str(out_dir),
+                    "strict_memory_limit": True,
+                    "strict_cpu_limit": True,
+                    "default_stdout": proc_stdout,
+                    "default_stderr": proc_stderr,
+                }
+            )
+
             factory: Factory = Factory(
                 executor=CallbackExecutor(context),
-                runtime_context=RuntimeContext(
-                    {
-                        "outdir": str(out_dir),
-                        "strict_memory_limit": True,
-                        "strict_cpu_limit": True,
-                        "default_stdout": proc_stdout,
-                        "default_stderr": proc_stderr,
-                    }
-                ),
+                runtime_context=runtime_context,
             )
 
             workflow: Callable = factory.make(
@@ -216,16 +212,3 @@ class CwlToolRunner(Runner):
                 raise
 
         return workflow_result
-
-    def cleanup_job(
-        self,
-        job_id: str,
-    ) -> None:
-        job_directory: Path = Path(self.persistent_output_directory, job_id)
-
-        if not job_directory.exists():
-            return
-
-        shutil.rmtree(job_directory)
-
-        return
