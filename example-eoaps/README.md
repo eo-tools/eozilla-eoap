@@ -19,3 +19,10 @@ The primes EOAP is a simple process that calculates prime numbers between a lowe
 ## Echo EOAP
 
 The echo EOAP is a simple process that simply echos the user's input to a files and returns it. By registering the accompanying [CWL workflow](./echo/echo-workflow.cwl), the process will be available at `/processes/echo-workflow`.
+
+## Cat EOAP
+
+> [!IMPORTANT]
+> As the file's content is loaded directly, the maximum allowed size is 65536 bytes. The workflow will error out without a specific reason supplied to the user.
+
+The cat EOAP is a simple process that cat the contents of a user-supplied file to stdout. By registering the accompanying CWL workflow, the process will be available at `/processes/cat-workflow`.
