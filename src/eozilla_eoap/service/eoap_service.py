@@ -4,6 +4,7 @@ import os
 from concurrent.futures import CancelledError, Future, wait
 from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
+from pathlib import Path
 from typing import Dict, List, Optional
 from urllib.request import url2pathname
 from uuid import uuid4
@@ -57,6 +58,7 @@ class LocalEoapService(ServiceBase, DruService):
         self,
         title: str,
         cwl_runner: Runner,
+        persitency_directory: Path,
         description: Optional[str] = None,
         conforms_to: Optional[List[str]] = None,
         process_registry: Optional[Registry] = None,
@@ -65,6 +67,7 @@ class LocalEoapService(ServiceBase, DruService):
         # TODO: Doesn't the executor become more of a "submitter" in my case?
         self.executor: Optional[ThreadPoolExecutor | ProcessPoolExecutor] = None
         self.cwl_runner: Runner = cwl_runner
+        self.persitency_directory: Path = persitency_directory
 
         self.process_registry: Optional[Registry] = process_registry
         # (
@@ -135,7 +138,11 @@ class LocalEoapService(ServiceBase, DruService):
 
         try:
             job = Job.create(
-                eoap, process_request, cwl_runner=self.cwl_runner, job_id=job_id
+                eoap,
+                process_request,
+                cwl_runner=self.cwl_runner,
+                job_id=job_id,
+                persistency_directory=self.persitency_directory,
             )
         except ValidationError as e:
             raise ServiceException(
@@ -209,10 +216,10 @@ class LocalEoapService(ServiceBase, DruService):
             JobStatus.successful,
             JobStatus.failed,
         ):
+            del self.jobs[job_id].artifact_manager
             del self.jobs[job_id]
             self.job_results.pop(job_id, None)
             self.job_uses_processes.pop(job_id, None)
-            self.cwl_runner.cleanup_job(job_id)
         return job.job_info
 
     async def get_job_results(self, job_id: str, *args, **kwargs) -> JobResults:
@@ -256,6 +263,12 @@ class LocalEoapService(ServiceBase, DruService):
             process: EoapProcess = self.process_registry.create(
                 eoap, entrypoint=w, ignore_existing=False
             )
+        except RuntimeError as e:
+            raise ServiceException(
+                status_code=403,
+                type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/immutable-process",
+                detail=e.args,
+            ) from e
         except KeyError:
             raise ServiceException(
                 status_code=409,
@@ -266,7 +279,7 @@ class LocalEoapService(ServiceBase, DruService):
             raise ServiceException(
                 status_code=400,
                 # type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/workflow-not-found",
-                detail=f"Workflow entrypoint {w} not found"
+                detail=f"Workflow entrypoint {w} not found",
             )
         except NamespaceNotFoundError:
             raise ServiceException(
@@ -290,7 +303,6 @@ class LocalEoapService(ServiceBase, DruService):
         response: Response,
         w: str | None = None,
     ) -> Optional[ProcessSummary]:
-        print(request.scope["route"].name)
         if request.headers.get("Content-Type") not in self.SUPPORTED_MEDIA_TYPES:
             raise ServiceException(
                 status_code=415,
@@ -314,7 +326,7 @@ class LocalEoapService(ServiceBase, DruService):
             raise ServiceException(
                 status_code=400,
                 # type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/workflow-not-found",
-                detail=f"Workflow entrypoint {w} not found"
+                detail=f"Workflow entrypoint {w} not found",
             )
         except NamespaceNotFoundError:
             raise ServiceException(

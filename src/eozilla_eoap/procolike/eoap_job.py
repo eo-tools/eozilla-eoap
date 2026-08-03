@@ -27,6 +27,7 @@ from procodile.reporter import CallbackReporter
 
 from eozilla_eoap.interfaces.runner import Runner
 
+from .eoap_artifact_manager import LocalArtifactManager
 from .eoap_process import EoapProcess
 
 
@@ -135,7 +136,8 @@ class Job(JobContext):
         process: EoapProcess,
         request: ProcessRequest,
         cwl_runner: Runner,
-        job_id: Optional[str] = None,
+        job_id: str,
+        persistency_directory: Path,
     ) -> "Job":
         """
         Create a new job for the given process and process request.
@@ -168,12 +170,17 @@ class Job(JobContext):
             mode="python", exclude_unset=False, exclude_none=True
         )
 
+        artifact_manager: LocalArtifactManager = LocalArtifactManager(
+            persistency_directory, job_id, model_instance
+        )
+
         return Job(
             process=process,
-            job_id=job_id or f"{uuid.uuid4()}",
+            job_id=job_id,
             eoap_args=eoap_args,
             cwl_runner=cwl_runner,
             subscriber=request.subscriber,
+            artifact_manager=artifact_manager,
         )
 
     def __init__(
@@ -184,6 +191,7 @@ class Job(JobContext):
         eoap_args: dict[str, Any],
         cwl_runner: Runner,
         subscriber: Optional[Subscriber] = None,
+        artifact_manager: Optional[LocalArtifactmanager] = None,
     ):
         """Internal constructor.
         Use `Job.create() instead.`
@@ -202,6 +210,7 @@ class Job(JobContext):
         self.subscriber = subscriber
         self._reporter: CallbackReporter | None = None
         self.cwl_runner = cwl_runner
+        self.artifact_manager = artifact_manager
 
     @property
     def reporter(self) -> CallbackReporter:
@@ -258,6 +267,9 @@ class Job(JobContext):
 
         self._start_job()
         try:
+            self.artifact_manager.initialize()
+            self.artifact_manager.resolve_remote_files()
+            self.eoap_args = self.artifact_manager.rebuild_process_arguments()
             self.check_cancelled()
             # TODO: Is it possible/desirable to dispatch run method (self.cwl_runner.run)
             #       on Process vs. EoapProcess? Could possibly allow multiple "things"
@@ -267,6 +279,7 @@ class Job(JobContext):
                 context=ctx,
                 process=self.process,
                 process_arguments=self.eoap_args,
+                persistent_output_directory=self.artifact_manager.persistent_output_directory,
             )
             self._finish_job(JobStatus.successful)
             # TODO: Similarly to the LocalEOAPService method `get_job_results`,
@@ -287,6 +300,8 @@ class Job(JobContext):
         except Exception as e:
             self._finish_job(JobStatus.failed, exception=e)
             self._maybe_notify_failed()
+        finally:
+            self.artifact_manager.remove_staged_inputs()
         return None
 
     def _get_job_results(self, function_result: Any) -> JobResults:

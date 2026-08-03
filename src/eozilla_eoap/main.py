@@ -12,5 +12,6 @@ service = LocalEoapService(
     process_registry=LocalEaopRegistry(
         Path(SERVICE_BASE_DIR, "eoap-service", "registry")
     ),
-    cwl_runner=CwlToolRunner(Path(SERVICE_BASE_DIR, "eoap-service", "runs")),
+    cwl_runner=CwlToolRunner(),
+    persitency_directory=Path(SERVICE_BASE_DIR, "eoap-service", "runs"),
 )
