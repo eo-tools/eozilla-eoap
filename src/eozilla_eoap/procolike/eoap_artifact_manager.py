@@ -160,7 +160,7 @@ def _(url: WrappedHttpUrl) -> Path:
     url_derived_name: str = url.location.rsplit("/", 1).pop()
     out_name = server_side_name or url_derived_name
 
-    out_dir = TemporaryDirectory(prefix="cwl-input-staging", delete=False).name
+    out_dir = TemporaryDirectory(prefix="cwl-input-staging-", delete=False).name
 
     full_out_path = Path(out_dir, out_name)
 
@@ -176,7 +176,7 @@ def _(url: WrappedHttpUrl) -> Path:
 def _(url: WrappedFtpUrl) -> Path:
     out_name = url.path.rsplit("/", 1).pop()
 
-    out_dir = TemporaryDirectory(prefix="cwl-input-staging", delete=False).name
+    out_dir = TemporaryDirectory(prefix="cwl-input-staging-", delete=False).name
 
     full_out_path = Path(out_dir, out_name)
 
@@ -285,7 +285,7 @@ def _(stac_obj: Catalog) -> Catalog:
         "Using a catlog seems unreasonable, may be deprecated in the future."
     )
 
-    out_dir = TemporaryDirectory(prefix="cwl-input-staging", delete=False).name
+    out_dir = TemporaryDirectory(prefix="cwl-input-staging-", delete=False).name
 
     catalog: Catalog = stac_obj.full_copy()
     catalog.set_self_href(out_dir)
@@ -300,7 +300,7 @@ def _(stac_obj: ItemCollection) -> Catalog:
     if len(stac_obj.items) == 0:
         raise ValueError("Empty ItemCollection")
 
-    out_dir = TemporaryDirectory(prefix="cwl-input-staging", delete=False).name
+    out_dir = TemporaryDirectory(prefix="cwl-input-staging-", delete=False).name
 
     catalog: Catalog = Catalog(
         id=stac_obj.items[0].collection_id or "eoap-input-catalog",
