@@ -268,7 +268,7 @@ class Job(JobContext):
         self._start_job()
         try:
             self.artifact_manager.initialize()
-            self.artifact_manager.resolve_remote_files()
+            self.artifact_manager.stage_in()
             self.eoap_args = self.artifact_manager.rebuild_process_arguments()
             self.check_cancelled()
             # TODO: Is it possible/desirable to dispatch run method (self.cwl_runner.run)
