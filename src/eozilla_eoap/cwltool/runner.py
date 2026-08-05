@@ -1,5 +1,4 @@
 import logging
-import shutil
 import threading
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path

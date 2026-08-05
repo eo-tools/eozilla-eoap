@@ -9,12 +9,11 @@
 import datetime
 import inspect
 import traceback
-import uuid
 import warnings
 from abc import ABC, abstractmethod
 from concurrent.futures import Future
 from typing import Any, Optional
-
+from pathlib import Path
 import pydantic
 from gavicore.models import (
     JobInfo,
@@ -191,7 +190,7 @@ class Job(JobContext):
         eoap_args: dict[str, Any],
         cwl_runner: Runner,
         subscriber: Optional[Subscriber] = None,
-        artifact_manager: Optional[LocalArtifactmanager] = None,
+        artifact_manager: Optional[LocalArtifactManager] = None,
     ):
         """Internal constructor.
         Use `Job.create() instead.`

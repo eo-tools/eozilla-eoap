@@ -6,7 +6,7 @@ from ftplib import FTP
 from functools import partial, singledispatch
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Tuple, Union, get_args, get_origin
+from typing import Any, Dict, List, Tuple, Union, get_args, get_origin, Callable
 from urllib.parse import unquote
 from urllib.request import pathname2url, url2pathname
 
@@ -14,6 +14,7 @@ import pystac
 import requests
 from pydantic import AnyUrl, BaseModel, FileUrl, HttpUrl
 from pystac import STACObject
+from pystac.asset import Asset
 from pystac.catalog import Catalog
 from pystac.item import Item
 from pystac.item_collection import ItemCollection
@@ -230,7 +231,7 @@ def _(url: WrappedFtpUrl) -> Path:
 
     full_out_path = Path(out_dir, out_name)
 
-    with FTP(url.server) as ftp:
+    with FTP(url.server) as ftp:  #noqa: S321
         if url.username:
             ftp.login(url.username, url.password)
         else:
@@ -606,10 +607,10 @@ def _iteratively_stage_out_files(
     patched_result_dict: Dict[str, Any] = {}
 
     for result_tag, result_value in results.items():
-        if type(result_value) == list:
+        if type(result_value) is list:
             patched_sublist = []
             for item in result_value:
-                if type(item) != dict:
+                if type(item) is not dict:
                     patched_sublist.append(item)
                     continue
 
@@ -629,7 +630,7 @@ def _iteratively_stage_out_files(
                 patched_sublist.append(pathname2url(dst_path))
 
             patched_result_dict[result_tag] = patched_sublist
-        elif type(result_value) == dict:
+        elif type(result_value) is dict:
             class_: str | None = result_value.get("class")
             if class_ is None or class_ != "File":
                 patched_result_dict[result_tag] = result_value
@@ -657,10 +658,10 @@ def _iteratively_stage_out_directories(
     patched_result_dict: Dict[str, Any] = {}
 
     for result_tag, result_value in results.items():
-        if type(result_value) == list:
+        if type(result_value) is list:
             patched_sublist = []
             for item in result_value:
-                if type(item) != dict:
+                if type(item) is not dict:
                     patched_sublist.append(item)
                     continue
 
@@ -680,7 +681,7 @@ def _iteratively_stage_out_directories(
                 patched_sublist.append(new_catalog.get_self_href())
 
             patched_result_dict[result_tag] = patched_sublist
-        elif type(result_value) == dict:
+        elif type(result_value) is dict:
             class_: str | None = result_value.get("class")
             if class_ is None or class_ != "Directory":
                 patched_result_dict[result_tag] = result_value

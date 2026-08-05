@@ -249,7 +249,7 @@ class File(BaseModel):
     nameext: str | None = None
     checksum: str | None = None
     size: int | None = None
-    secondary_files: list[File | Directory] | None = Field(None, alias="secondaryFiles")
+    secondary_files: list[File | Directory] | None = Field(None, alias="secondaryFiles")  # noqa: F821
     format: str | None = None
     contents: str | None = None
 
@@ -278,7 +278,7 @@ class Directory(BaseModel):
     location: str | None = None
     path: str | None = None
     basename: str | None = None
-    listing: list[File | Directory] | None = Field(None)
+    listing: list[File | Directory] | None = Field(None)  # noqa: F821
 
     @model_validator(mode="before")
     @classmethod

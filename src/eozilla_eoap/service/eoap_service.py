@@ -42,7 +42,6 @@ from eozilla_eoap.procolike import (
     NamespaceNotFoundError,
 )
 from eozilla_eoap.procolike.eoap_job import Job
-from eozilla_eoap.procolike.local_eoap_registry import LocalEaopRegistry
 
 from .eoap_acceptance import load_and_validate_from_body
 
@@ -280,7 +279,7 @@ class LocalEoapService(ServiceBase, DruService):
                 status_code=400,
                 # type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/workflow-not-found",
                 detail=f"Workflow entrypoint {w} not found",
-            )
+            ) from None
         except NamespaceNotFoundError:
             raise ServiceException(
                 status_code=422,
@@ -327,7 +326,7 @@ class LocalEoapService(ServiceBase, DruService):
                 status_code=400,
                 # type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/workflow-not-found",
                 detail=f"Workflow entrypoint {w} not found",
-            )
+            ) from None
         except NamespaceNotFoundError:
             raise ServiceException(
                 status_code=422,
