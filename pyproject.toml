@@ -45,7 +45,7 @@ dependencies = [
   "wraptile",
   "cwl-utils>=0.42,<0.43",
   "cwltool>=3.2.20260413085819,<4",
-  "pystac[validation,urllib3]>=1.15.2,<2",
+  "pystac[validation,urllib3]>=1.15.2,<2", "mkdocs-mermaid2-plugin>=1.2.3,<2",
 ]
 
 [project.urls]
@@ -143,5 +143,14 @@ xarray = "*"
 # zarr 3.2.x can no longer work with Windows file URIs, like file:///C:/...
 zarr = ">=3.1,<3.2"
 pydantic = ">=2.13.4,<3"
+mkdocs = ">=1.6.1,<2"
+mkdocs-autorefs = ">=1.4.4,<2"
+mkdocs-get-deps = ">=0.2.2,<0.3"
+mkdocs-material = ">=9.7.7,<10"
+mkdocs-material-extensions = ">=1.3.1,<2"
+mkdocstrings = ">=1.0.6,<2"
+mkdocstrings-python = ">=2.0.5,<3"
 
 [tool.pixi.tasks]
+serve-docs = "mkdocs serve"
+build-docs = "mkdocs build"

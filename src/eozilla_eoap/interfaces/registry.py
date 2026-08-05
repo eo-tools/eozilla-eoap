@@ -5,6 +5,19 @@ from .process import Process
 
 
 class Registry(ABC):
+    """Registry Base Class to Manage Processes.
+
+    The registry is responsible for the creation, reading, updating
+    and deletion (CRUD) of processes that are exposed to clients
+    connected to an OGC API - Processes compliant server.
+
+    The registered processes may be ephemeral by being stored in-memory
+    only or persistent by means of serialization and de-serialization.
+    In case an implementation chooses to store processes persistently,
+    it must offer a means to restore previously added processes on
+    startup of the OGC API - Processes compliant server.
+    """
+
     @abstractmethod
     def configure(self, *args, **kwargs) -> None:
         """Configure and setup a registry.

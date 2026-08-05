@@ -21,12 +21,15 @@ from eozilla_eoap.procolike import (
 
 
 class CwltoolLogger:
-    """Redirect logs of CWL executionto file
+    """Manipulate cwltool's logger to log to File
 
-    Store logs from CWL execution to a persistent file for
-    examination. The class implements the context manager
-    interface and is (currently) not expected to be used
-    standalone.
+    Store logs from CWL execution to a file for examination.
+    The class implements the context manager interface and
+    is not expected to be used standalone.
+
+    Notes:
+        All other handler previously contained by cwltools's
+        logger are removed.
     """
 
     def __init__(self, filename):
@@ -50,11 +53,13 @@ class CwltoolLogger:
 
 
 class CallbackExecutor(SingleJobExecutor):
-    """A `[cwltool.executors][SingleJobExecutor]` able to inject callbacks
-    between job steps
-
-    Args:
-        SingleJobExecutor (SingleJobExecutor): Executor to be extended
+    """A CWL Executor with Callback Injected Between job Steps
+    
+    The CallbackExecutor extends the [`SingleJobExecutor`](cwltool.executors.SingleJobExecutor)
+    such that before and after each job step (e.g. execution of a command line tool), a
+    [`JobContext`](eozilla_eoap.procolile.eoap_job.Jobcontext) is checked for a cancellation condition.If no
+    [`JobContext`](eozilla_eoap.procolile.eoap_job.Jobcontext) is specified a default
+    `NullJobContext` is used.
     """
 
     def __init__(self, context: Optional[Job] = None) -> None:
