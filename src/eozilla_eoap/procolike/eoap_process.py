@@ -28,8 +28,15 @@ class EoapProcess(Process):
     An EOAP process comprises a process description and a link to
     executable code in form of a CWL document.
 
+    Restriction:
+        All directories are assumed to contain EO data. There's currently no way to
+        stage directories containing non-EO data. While this severely limits generality
+        of a compliant server, it is in line with requirement 18 ("The Platform SHALL map
+        workflow input parameters of type “Directory” to a GeoJSON feature collection
+        with STAC Items in the Process description.")
+
     Attributes:
-        source: URI to CWl file, i.e. the OGC EOAP that this object describes.
+        source: URI to CWL file, i.e. the OGC EOAP that this object describes.
         model_class: Pydantic model class for the arguments of `source`.
         description: Process description modeled after
             [OGC API - Processes - Part 1: Core](https://docs.ogc.org/is/18-062r2/18-062r2.html#toc37).
