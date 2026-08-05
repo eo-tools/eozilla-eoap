@@ -1,3 +1,1 @@
-# Procolike
-
-Extensions and Adaptations of the [`procodile`](github.com/eo-tools/eozilla) framework, facilitating publishing EOAPs as OGC Processes.
+Extensions and Adaptations of the [`procodile`](https://eo-tools.github.io/eozilla/procodile/) framework. The original framework facilitates publishing EOAPs as OGC Processes. To this extent, the Job, Process and Registry submodules were adapted to better suite the additional requirements imposed by the [OGC API - Processes - Part 2: Deploy, Replace, Undeploy](https://docs.ogc.org/DRAFTS/20-044.html) while implementing the [`Process`][eozilla_eoap.interfaces.Process] and [`Registry`][eozilla_eoap.interfaces.Registry] interfaces.
