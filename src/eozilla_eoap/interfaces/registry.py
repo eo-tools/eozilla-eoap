@@ -46,7 +46,7 @@ class Registry(ABC):
 
         Returns:
             Any: Internal representation of a the newly
-              created process.
+                created process.
         """
 
     @abstractmethod
