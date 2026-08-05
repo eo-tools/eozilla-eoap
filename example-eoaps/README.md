@@ -26,3 +26,10 @@ The echo EOAP is a simple process that simply echos the user's input to a files 
 > As the file's content is loaded directly, the maximum allowed size is 65536 bytes. The workflow will error out without a specific reason supplied to the user.
 
 The cat EOAP is a simple process that cat the contents of a user-supplied file to stdout. By registering the accompanying CWL workflow, the process will be available at `/processes/cat-workflow`.
+
+## OTSU EOAP
+
+> [!NOTE]
+> The workflow definition is licensed under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Changes compared to the original source include re-definition of input parameters denoting STAC catalogs to be of type `Directory` as well as changing the version key from `softwareVersion` to `version`.
+
+The water bodies/OTSU workflow is process that generates a water mask by using the OTSU thresholding image processing technique. The EOAP is based on the workflow provided in the Quickwin Github repository (https://github.com/eoap/quickwin), see also their accompanying documentation at https://eoap.github.io/quickwin/. By registering the accompanying CWL workflow, the process will be available at `/processes/otsu-workflow`.
