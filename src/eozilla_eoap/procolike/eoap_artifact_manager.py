@@ -6,7 +6,7 @@ from ftplib import FTP
 from functools import partial, singledispatch
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Tuple, Union, get_args, get_origin, Callable
+from typing import Any, Callable, Dict, List, Tuple, Union, get_args, get_origin
 from urllib.parse import unquote
 from urllib.request import pathname2url, url2pathname
 

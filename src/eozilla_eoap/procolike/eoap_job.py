@@ -12,8 +12,9 @@ import traceback
 import warnings
 from abc import ABC, abstractmethod
 from concurrent.futures import Future
-from typing import Any, Optional
 from pathlib import Path
+from typing import Any, Optional
+
 import pydantic
 from gavicore.models import (
     JobInfo,
