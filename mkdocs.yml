@@ -1,0 +1,111 @@
+#  Copyright (c) 2026 by the Eozilla team and contributors
+#  Permissions are hereby granted under the terms of the Apache 2.0 License:
+#  https://opensource.org/license/apache-2-0.
+
+site_name: Eozilla 🦖 – EOAP
+repo_url: https://github.com/eo-tools/eozilla-eoap
+repo_name: eo-tools/eozilla-eoap
+
+copyright: Copyright &copy; 2026 Eozilla Team
+
+nav:
+  - Overview: index.md
+  - Restrictions: restrictions.md
+  - Service:
+    - Overview: service/index.md
+    - Api Reference: service/api.md
+  - Procolike:
+    - Overview: procolike/index.md
+    - Api Reference: procolike/api.md
+  - CWL Tool:
+    - Overview: cwltool/index.md
+    - Api Reference: cwltool/api.md
+  - Interfaces:
+    - Overview: interfaces/index.md
+    - Api Reference: interfaces/api.md
+  - Contributing: contributing.md
+
+theme:
+  name: material
+  # logo: assets/logo.png
+  # favicon: assets/logo.ico
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: blue grey
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: blue grey
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.top
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - toc.follow
+    - content.code.copy
+  custom_dir: docs/overrides
+
+markdown_extensions:
+  - attr_list
+  - tables
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      # make exceptions to highlighting of code:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+  # - pymdownx.highlight
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra:
+  mermaid: true
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/eo-tools/eozilla-eoap
+
+plugins:
+  - search
+  - autorefs
+  - mermaid2:
+      version: 11.14.0
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            #annotations_path: brief
+            #annotations_path: full
+            annotations_path: source
+            docstring_style: google
+            docstring_section_style: table
+            filters:
+              - "!^_"
+            heading_level: 3
+            inherited_members: true
+            line_length: 80
+            members_order: source
+            merge_init_into_class: true
+            separate_signature: true
+            show_if_no_docstring: false
+            show_root_heading: true
+            show_root_toc_entry: true
+            show_signature_annotations: true
+            show_source: false
+            # --- Generates JSON schema doc for each pydantic model:
+            # extensions:
+            #  - griffe_pydantic:
+            #      schema: true
+extra_css:
+  - overrides/css/custom.css
