@@ -1,6 +1,7 @@
 import logging
 import shutil
 import threading
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Union
 
@@ -164,7 +165,9 @@ class CwlToolRunner(Runner):
         *,
         process: EoapProcess,
         process_arguments: Dict[str, Any],
-        persistent_output_directory: path,
+        # only passing in a temporary directory decouples the CWL implementation
+        # from other parts of the software
+        temporary_output_directory: Path,
         # Question: Does the line below invert the owenership relation?
         #           Though, the original
         context: Optional[Job] = None,
@@ -172,13 +175,15 @@ class CwlToolRunner(Runner):
     ) -> Dict[str, Any]:
         # NOTE: The process arguments have already been validated when the owning job
         #       object was created
-        out_dir: Path = Path(persistent_output_directory, "out")
-        log_dir: Path = Path(persistent_output_directory, "log")
+        out_dir: Path = Path(temporary_output_directory, "out")
+        log_dir: Path = Path(temporary_output_directory, "log")
 
         with (
             CwltoolLogger(str(Path(log_dir, "run.log"))),
             open(Path(log_dir, "stdout"), "wt") as proc_stdout,
             open(Path(log_dir, "stderr"), "wt") as proc_stderr,
+            redirect_stdout(proc_stdout),
+            redirect_stderr(proc_stderr),
         ):
             runtime_context: RuntimeContext = RuntimeContext(
                 {
