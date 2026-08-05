@@ -1,16 +1,18 @@
+import copy
 import itertools
 import shutil
 from dataclasses import dataclass
 from ftplib import FTP
-from functools import singledispatch
+from functools import partial, singledispatch
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Tuple, Union, get_args, get_origin
 from urllib.parse import unquote
+from urllib.request import pathname2url, url2pathname
 
 import pystac
 import requests
-from pydantic import AnyUrl, BaseModel, HttpUrl
+from pydantic import AnyUrl, BaseModel, FileUrl, HttpUrl
 from pystac import STACObject
 from pystac.catalog import Catalog
 from pystac.item import Item
@@ -54,17 +56,18 @@ class LocalArtifactManager:
         self.base: Path = base
         self.job_id: str = job_id
         self.process_instance_model: BaseModel = process_instance_model
-        self.persistent_output_directory: Path | None = (
-            None  # NOTE: Runner only uses this, out and log directory should be created by artifact manager
-        )
+        self.persistent_output_directory: Path | None = None
+        self.temporary_output_directory: Path | None = None
         self.staged_in_files: Dict[str, List[Path]] = {}
         self.staged_in_directories: Dict[str, List[Path]] = {}
+        self.staged_out_files: Dict[str, List[Path]] = {}
+        self.staged_out_directories: Dict[str, List[Path]] = {}
 
     def __del__(self):
         self.remove_staged_in_files()
         self.remove_staged_in_directories()
-        if self.persistent_output_directory.exists():
-            shutil.rmtree(self.persistent_output_directory)
+        self.remove_persistent_outputs()
+        self.remove_temporary_outputs()
 
     def initialize(self):
         self.persistent_output_directory = Path(self.base, self.job_id)
@@ -75,6 +78,15 @@ class LocalArtifactManager:
         Path(self.persistent_output_directory, "log").mkdir(
             parents=False, exist_ok=False
         )
+        self.temporary_output_directory = Path(
+            TemporaryDirectory(prefix="cwl-temporary-output-", delete=False).name
+        )
+        Path(self.temporary_output_directory, "out").mkdir(
+            parents=False, exist_ok=False
+        )
+        Path(self.temporary_output_directory, "log").mkdir(
+            parents=False, exist_ok=False
+        )
 
     def stage_in(self):
         self.stage_in_files()
@@ -82,7 +94,7 @@ class LocalArtifactManager:
 
     def stage_in_files(self):
         # NOTE: This method has the side effect of updating the supplied instance model
-        self.staged_in_files, self.process_instance_model = _iteratively_resolve_files(
+        self.staged_in_files, self.process_instance_model = _iteratively_stage_in_files(
             self.process_instance_model,
             path_to_location=True,
         )
@@ -90,7 +102,7 @@ class LocalArtifactManager:
     def stage_in_directories(self):
         # NOTE: This method has the side effect of updating the supplied instance model
         self.staged_in_directories, self.process_instance_model = (
-            _iteratively_resolve_directories(
+            _iteratively_stage_in_directories(
                 self.process_instance_model,
                 path_to_location=True,
             )
@@ -100,6 +112,36 @@ class LocalArtifactManager:
         return self.process_instance_model.model_dump(
             mode="python", exclude_unset=False, exclude_none=True
         )
+
+    def stage_out(self, workflow_results: Dict[str, Any]) -> Dict[str, Any]:
+        transformed_results: Dict[str, Any] = copy.deepcopy(workflow_results)
+
+        self.stage_out_logs()
+        patched_results = self.stage_out_results(transformed_results)
+
+        return patched_results
+
+    def stage_out_logs(self):
+        tmp_log_dir: Path = Path(self.temporary_output_directory, "log")
+        per_log_dir: Path = Path(self.persistent_output_directory, "log")
+
+        # NOTE: allow for already existing directories since the artifact manager creates
+        #       the respective directories upfront.
+        shutil.copytree(tmp_log_dir, per_log_dir, symlinks=False, dirs_exist_ok=True)
+
+    def stage_out_results(self, results: Dict[str, Any]) -> Dict[str, Any]:
+        # QUESTION: Work with result dict or with files found in file system?
+        tmp_out_dir: Path = Path(self.temporary_output_directory, "out")
+        per_out_dir: Path = Path(self.persistent_output_directory, "out")
+
+        self.staged_out_files, results = _iteratively_stage_out_files(
+            results, src_base=tmp_out_dir, dst_base=per_out_dir
+        )
+        self.staged_out_directories, results = _iteratively_stage_out_directories(
+            results, dst_base=per_out_dir
+        )
+
+        return results
 
     def remove_staged_inputs(self):
         self.remove_staged_in_files()
@@ -117,6 +159,14 @@ class LocalArtifactManager:
             if not _path.exists():
                 continue
             shutil.rmtree(_path)
+
+    def remove_temporary_outputs(self):
+        if self.temporary_output_directory.exists():
+            shutil.rmtree(self.temporary_output_directory)
+
+    def remove_persistent_outputs(self):
+        if self.persistent_output_directory.exists():
+            shutil.rmtree(self.persistent_output_directory)
 
 
 @dataclass
@@ -193,7 +243,7 @@ def _(url: WrappedFtpUrl) -> Path:
 
 
 # NOTE: we're only ever exposing a path, not a complete File model as defined by CWL
-def _iteratively_resolve_files(
+def _iteratively_stage_in_files(
     model: BaseModel, path_to_location: bool = False
 ) -> Tuple[Dict[str, List[Path]], type[BaseModel]]:
     return_mapping: Dict[str, List[Path]] = {}
@@ -334,7 +384,7 @@ def _(stac_obj: Item) -> Catalog:
     return catalog
 
 
-def _load_stac(path: str) -> ItemCollection | Catalog | Item:
+def _load_remote_stac_from_http_url(path: str) -> ItemCollection | Catalog | Item:
     validated_url: HttpUrl = HttpUrl(path)
 
     try:
@@ -352,6 +402,103 @@ def _load_stac(path: str) -> ItemCollection | Catalog | Item:
             ) from None
 
 
+def _load_local_stac_from_cwl_output(path: str) -> ItemCollection | Catalog | Item:
+    # NOTE: The best practive guide assumes a process generates a STAC catalog
+    #       that is named "catalog.json"
+    validated_url: FileUrl = FileUrl(path + "/catalog.json")
+    parsed_path: str = url2pathname(str(validated_url), require_scheme=True)
+
+    try:
+        generic_stac_obj: STACObject = STACObject.from_file(parsed_path)
+    except pystac.errors.STACTypeError:
+        return ItemCollection.from_file(parsed_path)
+    else:
+        if generic_stac_obj.STAC_OBJECT_TYPE == "Catalog":
+            return Catalog.from_dict(generic_stac_obj.to_dict())
+        elif generic_stac_obj.STAC_OBJECT_TYPE == "Feature":
+            return Item.from_dict(generic_stac_obj.to_dict())
+        else:
+            raise ValueError(
+                f"Supplied STAC type ('{generic_stac_obj.STAC_OBJECT_TYPE}') not supported."
+            ) from None
+
+
+def _wolfgang_beltracchi(
+    key: str, value: Asset, source_trunk: str, destination_trunk: str
+) -> Dict[str, Asset]:
+    """Copy STAC Asset to new trunk
+
+    The source trunk refers to the base directory of the catalog, i.e. when /path/to/old/catalog.json is the full
+    path to the catalog source, `source_trunk` is /path/to/old and `destination_trunk` is a new absolute path
+    under which the copied catalog is placed, i.e. /new/path/old/catalog.json.
+    Thus, the encapsulating directory is preserved!
+
+    Args:
+        key (str): _description_
+        value (Asset): _description_
+        source_trunk (str): _description_
+        destination_trunk (str): _description_
+
+    Returns:
+        Dict[str, Asset]: _description_
+    """
+    # check if asset href is a local absolute path, if not simply return
+    asset_path: Path = Path(value.href)
+    if not (asset_path.is_absolute() and asset_path.exists()):
+        return {key: value}
+
+    new_location: str = value.href.replace(source_trunk, destination_trunk)
+
+    Path(new_location).parent.mkdir(parents=True, exist_ok=True)
+
+    new_asset: Asset = value.copy(new_location)
+
+    return {key: new_asset}
+
+
+def _copy_local_stac_catalog_to_new_trunk(
+    stac_obj: Catalog, local_catalog_path: Path
+) -> Catalog:
+    """_summary_
+
+    Note:
+        Nothing from a self-contained STAC catalog can be outside of `Path(stac_obj.get_self_href()).parent`.
+
+    Args:
+        stac_obj (Catalog): _description_
+        local_catalog_path (Path): Base directory to which outputs are staged.
+
+    Returns:
+        Catalog: _description_
+    """
+    self_source_trunk: Path = Path(stac_obj.get_self_href()).parent
+
+    self_destination_trunk = Path(local_catalog_path, self_source_trunk.name)
+    self_destination_trunk.mkdir(parents=True, exist_ok=False)
+
+    local_beltracchi: Callable[[str, Asset], Dict[str, Asset]] = partial(
+        _wolfgang_beltracchi,
+        source_trunk=str(self_source_trunk),
+        destination_trunk=str(self_destination_trunk),
+    )
+
+    stac_obj.make_all_asset_hrefs_absolute()
+
+    catalog: Catalog = stac_obj.map_assets(local_beltracchi)
+
+    catalog.set_self_href(self_destination_trunk)
+
+    catalog.normalize_hrefs(str(self_destination_trunk))
+
+    catalog.make_all_asset_hrefs_relative()
+
+    _ = [item.set_root(catalog) for item in catalog.get_all_items()]
+
+    catalog.save(catalog_type=pystac.CatalogType.SELF_CONTAINED)
+
+    return catalog
+
+
 # NOTE: we're only ever exposing a path, not a complete Directory model as defined by CWL
 # NOTE: single-file-stac is deprecated since Dec, 22 2022!
 # It's not quite clear to me what the replacement format should be tbh.
@@ -363,7 +510,7 @@ def _load_stac(path: str) -> ItemCollection | Catalog | Item:
 # I understand section '9.4.  Data Flow Management' in the sense that the platform should download
 # the data needed either upfront or lazily. I don't really get why because the program itself
 # must be able to read STAC itself anyway, but whatever
-def _iteratively_resolve_directories(
+def _iteratively_stage_in_directories(
     model: BaseModel, path_to_location: bool = False
 ) -> Tuple[Dict[str, List[Path]], type[BaseModel]]:
     return_mapping: Dict[str, List[Path]] = {}
@@ -399,7 +546,9 @@ def _iteratively_resolve_directories(
                 if isinstance(potential_directory, list):
                     return_mapping[tag] = [
                         _get_local_catalog_base_directory(
-                            _dispatch_stac_resolving(_load_stac(x.path))
+                            _dispatch_stac_resolving(
+                                _load_remote_stac_from_http_url(x.path)
+                            )
                         )
                         for x in potential_directory
                     ]
@@ -417,7 +566,9 @@ def _iteratively_resolve_directories(
                     return_mapping[tag] = [
                         _get_local_catalog_base_directory(
                             _dispatch_stac_resolving(
-                                _load_stac(potential_directory.path)
+                                _load_remote_stac_from_http_url(
+                                    potential_directory.path
+                                )
                             )
                         ),
                     ]
@@ -431,7 +582,7 @@ def _iteratively_resolve_directories(
             d: File = model.__dict__.get(tag)
             return_mapping[tag] = [
                 _get_local_catalog_base_directory(
-                    _dispatch_stac_resolving(_load_stac(d.path))
+                    _dispatch_stac_resolving(_load_remote_stac_from_http_url(d.path))
                 ),
             ]
 
@@ -446,3 +597,105 @@ def _iteratively_resolve_directories(
     model = model.model_validate(model)
 
     return return_mapping, model
+
+
+def _iteratively_stage_out_files(
+    results: Dict[str, Any], src_base: Path, dst_base: Path
+) -> Tuple[Dict[str, List[Path]], Dict[str, Any]]:
+    staged_out_files: Dict[str, List[Path]] = {}
+    patched_result_dict: Dict[str, Any] = {}
+
+    for result_tag, result_value in results.items():
+        if type(result_value) == list:
+            patched_sublist = []
+            for item in result_value:
+                if type(item) != dict:
+                    patched_sublist.append(item)
+                    continue
+
+                class_: str | None = item.get("class")
+                if class_ is None or class_ != "File":
+                    patched_sublist.append(item)
+                    continue
+
+                f: File = File.model_validate(item)
+                src_path: str = url2pathname(f.location, require_scheme=True)
+                # maybe file in subdir whose structure should be preserved?!
+                dst_path: str = src_path.replace(str(src_base), str(dst_base))
+                Path(dst_path).parent.mkdir(parents=True, exist_ok=False)
+
+                shutil.copyfile(src_path, dst_path)
+
+                patched_sublist.append(pathname2url(dst_path))
+
+            patched_result_dict[result_tag] = patched_sublist
+        elif type(result_value) == dict:
+            class_: str | None = result_value.get("class")
+            if class_ is None or class_ != "File":
+                patched_result_dict[result_tag] = result_value
+                continue
+
+            f: File = File.model_validate(result_value)
+            src_path: str = url2pathname(f.location, require_scheme=True)
+            # maybe file in subdir whose structure should be preserved?!
+            dst_path: str = src_path.replace(str(src_base), str(dst_base))
+            Path(dst_path).parent.mkdir(parents=True, exist_ok=False)
+
+            shutil.copyfile(src_path, dst_path)
+
+            patched_result_dict[result_tag] = pathname2url(dst_path)
+        else:
+            patched_result_dict[result_tag] = result_value
+
+    return staged_out_files, patched_result_dict
+
+
+def _iteratively_stage_out_directories(
+    results: Dict[str, Any], dst_base: Path
+) -> Tuple[Dict[str, List[Path]], Dict[str, Any]]:
+    staged_out_directories: Dict[str, List[Path]] = {}
+    patched_result_dict: Dict[str, Any] = {}
+
+    for result_tag, result_value in results.items():
+        if type(result_value) == list:
+            patched_sublist = []
+            for item in result_value:
+                if type(item) != dict:
+                    patched_sublist.append(item)
+                    continue
+
+                class_: str | None = item.get("class")
+                if class_ is None or class_ != "Directory":
+                    patched_sublist.append(item)
+                    continue
+
+                d: Directory = Directory.model_validate(item)
+
+                old_catalog: Catalog = _load_local_stac_from_cwl_output(d.location)
+
+                new_catalog: Catalog = _copy_local_stac_catalog_to_new_trunk(
+                    old_catalog, dst_base
+                )
+
+                patched_sublist.append(new_catalog.get_self_href())
+
+            patched_result_dict[result_tag] = patched_sublist
+        elif type(result_value) == dict:
+            class_: str | None = result_value.get("class")
+            if class_ is None or class_ != "Directory":
+                patched_result_dict[result_tag] = result_value
+                continue
+
+            d: Directory = Directory.model_validate(result_value)
+
+            old_catalog: Catalog = _load_local_stac_from_cwl_output(d.location)
+
+            new_catalog: Catalog = _copy_local_stac_catalog_to_new_trunk(
+                old_catalog, dst_base
+            )
+
+            patched_result_dict[result_tag] = new_catalog.get_self_href()
+        else:
+            patched_result_dict[result_tag] = result_value
+
+    return staged_out_directories, patched_result_dict

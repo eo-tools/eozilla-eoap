@@ -279,8 +279,9 @@ class Job(JobContext):
                 context=ctx,
                 process=self.process,
                 process_arguments=self.eoap_args,
-                persistent_output_directory=self.artifact_manager.persistent_output_directory,
+                temporary_output_directory=self.artifact_manager.temporary_output_directory,
             )
+            results = self.artifact_manager.stage_out(results)
             self._finish_job(JobStatus.successful)
             # TODO: Similarly to the LocalEOAPService method `get_job_results`,
             #       this would be responsible for stage-out/directory creation.
@@ -302,6 +303,7 @@ class Job(JobContext):
             self._maybe_notify_failed()
         finally:
             self.artifact_manager.remove_staged_inputs()
+            self.artifact_manager.remove_temporary_outputs()
         return None
 
     def _get_job_results(self, function_result: Any) -> JobResults:
