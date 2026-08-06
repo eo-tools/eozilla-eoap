@@ -170,7 +170,7 @@ def check_eoap_requirement_11(cwl_object: dict) -> bool:
 
     namespaces: dict = cwl_object.get("$namespaces")
 
-    if namespaces is None:
+    if namespaces is None or type(namespaces) is not dict:
         return False
 
     schema_org_key: str = ""
