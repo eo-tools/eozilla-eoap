@@ -54,6 +54,13 @@ class LocalArtifactManager:
     """
 
     def __init__(self, base: Path, job_id: str, process_instance_model: BaseModel):
+        """Constructor for LocalArtifactManager
+
+        Args:
+            base (Path): Base directory where persistent output is stored
+            job_id (str): Unique job Id
+            process_instance_model (BaseModel): Process instance model, i.e. validated inputs
+        """
         self.base: Path = base
         self.job_id: str = job_id
         self.process_instance_model: BaseModel = process_instance_model
@@ -65,12 +72,27 @@ class LocalArtifactManager:
         self.staged_out_directories: Dict[str, List[Path]] = {}
 
     def __del__(self):
+        """Destructor for LocalArtifactManager
+
+        The destructor cleans up all staged-in files and STAC catalogs
+        as well all staged-out files and STAC catalogs.
+        """
         self.remove_staged_in_files()
         self.remove_staged_in_directories()
         self.remove_persistent_outputs()
         self.remove_temporary_outputs()
 
     def initialize(self):
+        """Initialize Temporary and Persistent Output Directories.
+
+        Creates empty directories for temporary and persistent outputs
+        of a given job execution together with the respective
+        log and out subdirectories.
+
+        Raises:
+            FileExistsError: Directories already exist, hinting at duplicate
+                job Ids.
+        """
         self.persistent_output_directory = Path(self.base, self.job_id)
         self.persistent_output_directory.mkdir(parents=True, exist_ok=False)
         Path(self.persistent_output_directory, "out").mkdir(
@@ -90,18 +112,29 @@ class LocalArtifactManager:
         )
 
     def stage_in(self):
+        """Stage-in `File` and `Directory` arguments"""
         self.stage_in_files()
         self.stage_in_directories()
 
     def stage_in_files(self):
-        # NOTE: This method has the side effect of updating the supplied instance model
+        """Stage-In `File` Arguments
+
+        Notes:
+            This method has the side effect of updating the supplied process
+            instance model.
+        """
         self.staged_in_files, self.process_instance_model = _iteratively_stage_in_files(
             self.process_instance_model,
             path_to_location=True,
         )
 
     def stage_in_directories(self):
-        # NOTE: This method has the side effect of updating the supplied instance model
+        """Stage-In `Directory` Arguments
+
+        Notes:
+            This method has the side effect of updating the supplied process
+            instance model.
+        """
         self.staged_in_directories, self.process_instance_model = (
             _iteratively_stage_in_directories(
                 self.process_instance_model,
@@ -110,11 +143,32 @@ class LocalArtifactManager:
         )
 
     def rebuild_process_arguments(self) -> Dict[str, Any]:
+        """Regenerate Process Argument Dictonary
+
+        After staging-in `File` and `Directory` arguments and updating the
+        respective model fields, the original argument dictonary must be
+        regenerated to point to the resolved, now local, entities.
+
+        Returns:
+            Dict[str, Any]: Regenerated process argument dictionary.
+        """
         return self.process_instance_model.model_dump(
             mode="python", exclude_unset=False, exclude_none=True
         )
 
     def stage_out(self, workflow_results: Dict[str, Any]) -> Dict[str, Any]:
+        """Stage-Out Logs and Results of Workflow/Process execution.
+
+        Notes:
+            - The `workflow_results` input argument is copied, changes are
+              not visible on the original value.
+
+        Args:
+            workflow_results (Dict[str, Any]): Workflow/Process results returned by executor.
+
+        Returns:
+            Dict[str, Any]: Patched results dictionary.
+        """
         transformed_results: Dict[str, Any] = copy.deepcopy(workflow_results)
 
         self.stage_out_logs()
@@ -123,15 +177,38 @@ class LocalArtifactManager:
         return patched_results
 
     def stage_out_logs(self):
+        """Stage-Out Log Files by Copying entire Filesystem Trees
+
+        Notes:
+            Here, pre-existing directories are allowed since the
+            artifact manager already created the directories upon
+            initialization.
+        """
         tmp_log_dir: Path = Path(self.temporary_output_directory, "log")
         per_log_dir: Path = Path(self.persistent_output_directory, "log")
 
-        # NOTE: allow for already existing directories since the artifact manager creates
-        #       the respective directories upfront.
         shutil.copytree(tmp_log_dir, per_log_dir, symlinks=False, dirs_exist_ok=True)
 
     def stage_out_results(self, results: Dict[str, Any]) -> Dict[str, Any]:
-        # QUESTION: Work with result dict or with files found in file system?
+        """Stage-out `File` and `Directory` Workflow Results.
+
+        The results of a workflow/process execution are checked for entries
+        of type `File` or `Directory`. These are staged-out to a persistent
+        directory and the respective type models are replaced by a string
+        value pointing to the result.
+
+        Notes:
+            - The `workflow_results` input argument is copied, changes are
+              not visible on the original value.
+            - For STAC catalogs, only the `catalog.json` is returned which
+              is sufficient to discover all related output data.
+
+        Args:
+            results (Dict[str, Any]): Workflow/Process results returned by executor.
+
+        Returns:
+            Dict[str, Any]: Patched results dictionary.
+        """
         tmp_out_dir: Path = Path(self.temporary_output_directory, "out")
         per_out_dir: Path = Path(self.persistent_output_directory, "out")
 
@@ -145,10 +222,16 @@ class LocalArtifactManager:
         return results
 
     def remove_staged_inputs(self):
+        """Remove Staged-In `Files` and `Directories`"""
         self.remove_staged_in_files()
         self.remove_staged_in_directories()
 
     def remove_staged_in_files(self):
+        """Remove Staged-In `Files`.
+
+        Iterate over all previously staged-in files, deleting them
+        and the temporary directory they were placed in.
+        """
         for _path in itertools.chain.from_iterable(self.staged_in_files.values()):
             if not _path.exists():
                 continue
@@ -156,16 +239,23 @@ class LocalArtifactManager:
             shutil.rmtree(_path.parent)
 
     def remove_staged_in_directories(self):
+        """Remove Staged-In `Directories`.
+
+        Iterate over all previously staged-in STAC catalogs,
+        unlinking the entire temporary directory they were placed in.
+        """
         for _path in itertools.chain.from_iterable(self.staged_in_directories.values()):
             if not _path.exists():
                 continue
             shutil.rmtree(_path)
 
     def remove_temporary_outputs(self):
+        """Remove temporary output directory."""
         if self.temporary_output_directory.exists():
             shutil.rmtree(self.temporary_output_directory)
 
     def remove_persistent_outputs(self):
+        """Remove permanent output directory."""
         if self.persistent_output_directory.exists():
             shutil.rmtree(self.persistent_output_directory)
 
