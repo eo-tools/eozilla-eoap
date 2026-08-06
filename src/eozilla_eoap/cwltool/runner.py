@@ -32,7 +32,7 @@ class CwltoolLogger:
         logger are removed.
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename: str):
         self.handler = logging.FileHandler(filename)
 
     def __enter__(self):
@@ -54,10 +54,10 @@ class CwltoolLogger:
 
 class CallbackExecutor(SingleJobExecutor):
     """A CWL Executor with Callback Injected Between job Steps
-    
+
     The CallbackExecutor extends the [`SingleJobExecutor`](cwltool.executors.SingleJobExecutor)
     such that before and after each job step (e.g. execution of a command line tool), a
-    [`JobContext`](eozilla_eoap.procolile.eoap_job.Jobcontext) is checked for a cancellation condition.If no
+    [`JobContext`](eozilla_eoap.procolile.eoap_job.Jobcontext) is checked for a cancellation condition. If no
     [`JobContext`](eozilla_eoap.procolile.eoap_job.Jobcontext) is specified a default
     `NullJobContext` is used.
     """
@@ -99,7 +99,8 @@ class CallbackExecutor(SingleJobExecutor):
         Yields:
             JobsGeneratorType: Next job item to execue
         """
-        # bound method, i.e. storing a pointer to the original process.job
+        # original_job is a bound method,
+        # i.e. storing a pointer to the original process.job
         original_job = process.job
 
         def job(
@@ -107,10 +108,25 @@ class CallbackExecutor(SingleJobExecutor):
             output_callbacks: OutputCallbackType,
             runtimeContext: RuntimeContext,
         ) -> JobsGeneratorType:
-            # basically create the *default* iterator by calling the job method
-            # NOTE: This is called both for all instances of a "job" which are not exclusive
-            #       to command line jobs; thus, the added run attribute should not
-            #       have immediate side-effects?
+            """Job Generator
+
+            This function wraps the original/default job generator, yielding
+            the original job object wrapped in a custom `_wrap_run` function.
+
+            Notes:
+                This method is called for all instances of a "job" which are
+                not exclusive to command line jobs; thus it may preferable,
+                if the overwritten `run` method does not raise immediate errors
+                or have side-effects on the first invocation.
+
+            Args:
+                job_order (CWLObjectType): Resolved job orders.
+                output_callbacks (OutputCallbackType): Callback executed on job return.
+                runtimeContext (RuntimeContext): Runtime context for execution.
+
+            Yields:
+                Iterator[JobsGeneratorType]: Next job step.
+            """
             for job in original_job(job_order, output_callbacks, runtimeContext):
                 self._wrap_run(job)  # mutating object inside + passing by reference
                 # re-yield result
@@ -163,6 +179,8 @@ class CallbackExecutor(SingleJobExecutor):
 
 
 class CwlToolRunner(Runner):
+    """Implementation of the interfaces mandated by [`Runner`][eozilla_eoap.interfaces.Runner]."""
+
     def run(
         self,
         job_id: str,
@@ -177,6 +195,44 @@ class CwlToolRunner(Runner):
         context: Optional[Job] = None,
         **kwargs,
     ) -> Dict[str, Any]:
+        """Dispatch a execution request to cwltool.
+
+        The `run` method is responsible for various steps necessary before
+        actual execution of a process can occurr:
+
+        - Paths under which to store generated logs and outputs are set up,
+          though not created as the Runner is not responsible for *external*
+          data management.
+        - cwltool's runtime context is prepared.
+        - The workflow implementation and the corresponding entrypoint are
+          loaded from a CWL document.
+        - The workflow is executed locally and its results are passed up to
+          the calling context.
+
+        Args:
+            job_id (str): Unique job Id (currently unused).
+            process (EoapProcess): In-memory representation of an OGC
+                Process that can be used to access the source and entrypoint
+                of a CWL file.
+            process_arguments (Dict[str, Any]): Validated user-supplied
+                arguments for the process. Note, that any staging of data
+                must already been applied before passing the execution request
+                to this runner.
+            temporary_output_directory (Path): Absolute file path to a directory
+                where logs and outputs are stored. Note, that from cwltool's
+                perspective, this might as well be a persistent/final
+                output directory.
+            context (Optional[Job], optional): Optional job context used to check
+                for cancellation requests between job steps. Defaults to None.
+
+        Raises:
+            JobCancelledException: The user requested early cancellation of the
+                process. Only raised when the `context` argument is non-null.
+            Exception: Raised in case of general execution exceptions.
+
+        Returns:
+            Dict[str, Any]: Workflow results to be passed back to caller.
+        """
         # NOTE: The process arguments have already been validated when the owning job
         #       object was created
         out_dir: Path = Path(temporary_output_directory, "out")
