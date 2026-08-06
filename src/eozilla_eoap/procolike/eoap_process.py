@@ -37,6 +37,9 @@ class EoapProcess(Process):
 
     Attributes:
         source: URI to CWL file, i.e. the OGC EOAP that this object describes.
+        entrypoint: Workflow entrypoint to use, also used as process Id.
+
+    Properties:
         model_class: Pydantic model class for the arguments of `source`.
         description: Process description modeled after
             [OGC API - Processes - Part 1: Core](https://docs.ogc.org/is/18-062r2/18-062r2.html#toc37).
@@ -49,10 +52,20 @@ class EoapProcess(Process):
 
     @property
     def model_class(self) -> type[BaseModel]:
+        """Getter of `model_class` property
+
+        Returns:
+            type[BaseModel]: Process model instance.
+        """
         return self._model_class
 
     @property
     def description(self) -> ProcessDescription:
+        """Getter of `description` property
+
+        Returns:
+            ProcessDescription: OGC-compliant process description.
+        """
         return self._description
 
     @classmethod
@@ -62,12 +75,27 @@ class EoapProcess(Process):
         current_content: dict,
         entrypoint: str | None = None,
     ) -> "EoapProcess":
+        """Public Constructor for EoapProcess
+
+        Args:
+            future_source (Path): Base directory where the serialized content of
+                the encapsulated CWL document will be stored.
+            current_content (dict): In-memory representation
+            entrypoint (str | None, optional): Optional workflow entrypoint specified
+                by the user. Defaults to None.
+
+        Raises:
+            ValueError: The user supplied an entrypoint that was not found in the
+                workflow definition.
+
+        Returns:
+            EoapProcess: New instance of created EoapProcess.
+        """
         id, version, title, description, keywords = cls._extract_process_metadata(
             current_content, entrypoint
         )
 
         if entrypoint and id != entrypoint:
-            # Question to myself: how is this possible again?
             raise ValueError(
                 "Specifying an entrypoint different to the id of the entrypoit is not allowed"
             )
@@ -102,6 +130,21 @@ class EoapProcess(Process):
     def _extract_process_metadata(
         cls, cwl: dict, w: str | None = None
     ) -> Tuple[str, str, str, str]:
+        """Extract Set of CWL Workflow Metadata
+
+        Args:
+            cwl (dict): In-memory, non-parsed representation of CWL document.
+            w (str | None, optional): Optional, user-supplied workflow entrypoint. Defaults to None.
+
+        Raises:
+            NamespaceNotFoundError: Namesspaces attribute is missing entirely or
+                the schema.org namespace is missing from it.
+
+        Returns:
+            Tuple[str, str, str, str]: Tuple of (1) workflow id, i.e. the workflow entrypoint name,
+                (2) version tag, (3) workflow title, (4) workflow description and
+                (5) workflow keywords.
+        """
         process_entry_node = cls._find_entrypoint(cwl, w)
 
         # [`cwl_utils`] gobbles metadata, thus using raw dict is required
@@ -133,6 +176,36 @@ class EoapProcess(Process):
         cwl: dict,
         entrypoint: str,
     ) -> Tuple[InputDescription, OutputDescription]:
+        """Convert CWL Workflow Inputs and Outputs to OGC-compliant Descriptions
+
+        Iterate over all input descriptions of the workflow entrypoint and
+        convert them to an OGC-compliant schema that is presented to a client
+        querying input and output definitions of a deployed OGC Process.
+
+        Every CWL argument definition is recursively resolved to a base
+        type (boolean, int, float, string, File, Directory), array or enums.
+        Optional values are marked by setting the `minOccurs` field to zero.
+        Default values are preserved and set accordingly.
+
+        Note that `File` and `Directory` argument are converted to string inputs
+        that must point to remote resources.
+
+        Important:
+            Record types are currently not supported there's no clear way how
+            they should be mapped to OGC-compliant input and output descriptions.
+
+        Args:
+            cwl (dict): In-memory representation of CWL document.
+            entrypoint (str): Resolved entrypoint of the workflow.
+
+        Raises:
+            AssertionError: Input or output argument has no unique Id specified.
+
+        Returns:
+            Tuple[InputDescription, OutputDescription]: Tuple of (1) OGC-compliant
+                process input description and (2) OGC-compliant process output
+                description.
+        """
         process_entry_node: dict = cls._find_entrypoint(cwl, entrypoint)
 
         inputs_ = cls._get_workflow_input(process_entry_node)
@@ -187,14 +260,41 @@ class EoapProcess(Process):
 
     @classmethod
     def _generate_model_class(cls, cwl: dict, entrypoint: str) -> type[BaseModel]:
+        """Generate pydantic Model Class for Workflow/Process Inputs
+
+        The generated pydantic model can be used to validated user inputs
+        upon execution requests. Note that contrary to the conversion from
+        CWL to OGC input/output descriptions, complete data models for
+        `File` and `Directory` are incorporated.
+
+        Args:
+            cwl (dict): In-memory representation of CWL Workflow.
+            entrypoint (str): Workflow entrypoint.
+
+        Returns:
+            type[BaseModel]: Dynamically created process model.
+        """
         process_entry_node: dict = cls._find_entrypoint(cwl, entrypoint)
 
         return cwl_inputs_to_model_class(process_entry_node.inputs)
 
     @classmethod
-    def _find_entrypoint(cls, cwl_dict: dict, w: str | None = None):
-        """Extract either the Workflow instance with the id tag given by `w` or,
+    def _find_entrypoint(cls, cwl_dict: dict, w: str | None = None) -> Dict:
+        """Extract Workflow Entrypoint
+
+        Extract either the Workflow instance with the id tag given by `w` or,
         if the paramter is None, the first instance of a Workflow object.
+
+        Args:
+            cwl_dict (dict): In-memory representation of CWL Workflow.
+            w (str | None, optional): Optional, user-supplied workflow entrypoint.
+                Defaults to None.
+
+        Raises:
+            EntrypointNotFoundError: Raised if user-supplied entrypoint does not exist.
+
+        Returns:
+            Dict: Workflow node to representing entrypoint of process.
         """
         if w is not None:
             try:
@@ -213,11 +313,27 @@ class EoapProcess(Process):
         raise EntrypointNotFoundError("No workflow entrypoint found.")
 
     @classmethod
-    def _get_workflow_input(cls, cwl_node):
+    def _get_workflow_input(cls, cwl_node: Dict) -> Dict:
+        """Extract Input Attribute of Node
+
+        Args:
+            cwl_node (Dict): A CWL node.
+
+        Returns:
+            Dict: Input definitions of supplied CWL node.
+        """
         return cwl_node.inputs
 
     @classmethod
-    def _get_workflow_ouput(cls, cwl_node):
+    def _get_workflow_ouput(cls, cwl_node: Dict) -> Dict:
+        """Extract Output Attribute of Node
+
+        Args:
+            cwl_node (Dict): A CWL node.
+
+        Returns:
+            Dict: Output definitions of supplied CWL node.
+        """
         return cwl_node.outputs
 
 
@@ -231,8 +347,9 @@ FLAT_TYPE_MAPPING_TO_OGC = {
 }
 
 
-# NOTE: Taken from cwl2/models module from mr. propper repo
 class File(BaseModel):
+    """Pydanic model of a CWL file"""
+
     model_config = ConfigDict(
         extra="allow",
         populate_by_name=True,
@@ -256,6 +373,19 @@ class File(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def normalize_minimal_file(cls, data: Any) -> Any:
+        """Before-validator for Improved User-Friendliness
+
+        To hide the underlying pydantic model when a process takes
+        in a File argument, this model validator allowes the user to
+        pass in only the file path that is converted to a minimal
+        set of mandatory fields needed to pass model validation.
+
+        Args:
+            data (Any): Input data
+
+        Returns:
+            Any: Possibly modified input data.
+        """
         if isinstance(data, str):
             return {"class": "File", "path": data}
 
@@ -265,8 +395,9 @@ class File(BaseModel):
         return data
 
 
-# NOTE: Taken from cwl2/models module from mr. propper repo
 class Directory(BaseModel):
+    """Pydanic model of a CWL directory"""
+
     model_config = ConfigDict(
         extra="allow",
         populate_by_name=True,
@@ -283,6 +414,20 @@ class Directory(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def normalize_minimal_directory(cls, data: Any) -> Any:
+        """Before-validator for Improved User-Friendliness
+
+        To hide the underlying pydantic model when a process takes
+        in a Directory argument, this model validator allowes the
+        user to pass in only the "directory" path (STAC Object)
+        that is converted to a minimal set of mandatory fields
+        needed to pass model validation.
+
+        Args:
+            data (Any): Input data
+
+        Returns:
+            Any: Possibly modified input data.
+        """
         if isinstance(data, str):
             return {"class": "Directory", "path": data}
 
@@ -293,12 +438,50 @@ class Directory(BaseModel):
 
 
 def _resolve_ogc_schema_from_cwl_utils(
-    cwl_type,
+    cwl_type: str
+    | list
+    | parser.InputArraySchema
+    | parser.OutputArraySchema
+    | parser.InputEnumSchema
+    | parser.OutputEnumSchema
+    | parser.InputRecordSchema
+    | parser.OutputRecordSchema,
     *,
     default: Any | None = None,
     format: str | None = None,
     nullable: bool = False,
 ) -> Tuple[bool, bool, Schema]:
+    """Resolve CWL Arguments to OGC Schema
+
+    Every CWL argument definition is recursively resolved to a base
+    type (boolean, int, float, string, File, Directory), that may be
+    encapsulated in arrays or enums. Optional values are marked by
+    setting the `minOccurs` field to zero, arrays by marking a parameter
+    as "unbounded". Default values are preserved and set accordingly.
+
+    Note that `File` and `Directory` argument are converted to string inputs
+    that must point to remote resources.
+
+    Important:
+        Record types are currently not supported there's no clear way how
+        they should be mapped to OGC-compliant input and output descriptions.
+
+    Args:
+        cwl_type (str | list | parser.InputArraySchema | parser.OutputArraySchema | parser.InputEnumSchema | parser.OutputEnumSchema | parser.OutputRecordSchema | parser.OutputRecordSchema): Type field of workflow input/output item.
+        default (Any | None, optional): Optional default value. Defaults to None.
+        format (str | None, optional): Optional format string. Defaults to None.
+        nullable (bool, optional): Boolean indicating if parameter can be null.
+            Defaults to False.
+
+    Raises:
+        NotImplementedError: Raised when encountering CWL type whose conversion
+            is not possible or implemented.
+
+    Returns:
+        Tuple[bool, bool, Schema]: Tuple consisting of (1) boolean indicating if
+            argument can be null, (2) boolean indicating if an argument is
+            unbounded, i.e. an array and (3) the corresponding OGC Schema.
+    """
     if isinstance(cwl_type, str):
         if cwl_type == "File":
             return (
@@ -390,6 +573,17 @@ FLAT_TYPE_MAPPING_TO_PYTHON = {
 def cwl_inputs_to_model_class(
     inputs: list[parser.WorkflowInputParameter],
 ) -> type[BaseModel]:
+    """Generate a pydantic Model from a Workflow#s Input Arguments
+
+    The generated pydantic model can be used to validate the user-provided
+    arguments upon process execution request.
+
+    Args:
+        inputs (list[parser.WorkflowInputParameter]): List of input arguments.
+
+    Returns:
+        type[BaseModel]: Pydantic model
+    """
     arguments: Dict[str, Any] = {}
 
     if isinstance(inputs, list):
@@ -409,8 +603,34 @@ def cwl_inputs_to_model_class(
 
 
 def _resolve_to_pydantic_tuple(
-    arg_value, arg_default: Any = None, *, arg_from_array: bool = False
+    arg_value: str
+    | list
+    | parser.InputArraySchema
+    | parser.InputEnumSchema
+    | parser.InputRecordSchema,
+    arg_default: Any = None,
+    *,
+    arg_from_array: bool = False,
 ) -> Tuple[type, type] | type:
+    """Resolve CWL Type Definition to Python's Types
+
+    Every CWL argument definition is recursively resolved to a base
+    type (boolean, int, float, string, File, Directory), that may be
+    encapsulated in arrays or enums. The deduced type is converted into
+    a type Python can represent.
+
+    Args:
+        arg_value (str | list | parser.InputArraySchema | parser.InputEnumSchema | parser.InputRecordSchema): Type field of workflow input item.
+        arg_default (Any, optional): Optional default value. Defaults to None.
+        arg_from_array (bool, optional): Boolean indicating whether type was deduced from array. Defaults to False.
+
+    Raises:
+        NotImplementedError: Raised when encountering CWL type whose conversion
+            is not possible or implemented.
+
+    Returns:
+        Tuple[type, type] | type: Tuple of converted argument type and its default value or just the converted argument type.
+    """
     if isinstance(arg_value, str):
         if arg_value == "File":
             # NOTE: dismissing `from_array` because defaults are attached to T not L<T> for files/directories
