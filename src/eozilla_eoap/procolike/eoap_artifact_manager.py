@@ -274,6 +274,22 @@ class WrappedFtpUrl:
 
 
 def _string_to_url_class(url: str) -> WrappedHttpUrl | WrappedFtpUrl:
+    """Convert an URL to a known URL Type
+
+    The supplied URL is validated using pydantic's `AnyUrl` model and
+    converted to a known URL type for downloading.
+
+    Args:
+        url (str): URL supplied by the user in process execution request
+            for arguments of type `File`.
+
+    Raises:
+        NotImplementedError: Supplied URL's scheme is not implemented for
+            remote data access.
+
+    Returns:
+        WrappedHttpUrl | WrappedFtpUrl: Instance of URL type.
+    """
     any_url: AnyUrl = AnyUrl(url)
     if any_url.scheme in ["http", "https"]:
         return WrappedHttpUrl(url)
@@ -288,12 +304,40 @@ def _string_to_url_class(url: str) -> WrappedHttpUrl | WrappedFtpUrl:
 
 
 @singledispatch
-def _dispatch_singular_file_download(url) -> Path:
+def _dispatch_singular_file_download(url: AnyUrl) -> Path:
+    """Generic Function for Remote File Download
+
+    Args:
+        url (AnyUrl): Previously converted URL.
+
+    Raises:
+        TypeError: Risen in case not-implemented URL type is supplied.
+
+    Returns:
+        Path: Local path of downloaded file.
+    """
     raise TypeError(f"Download not implemented for {type(url)}")
 
 
 @_dispatch_singular_file_download.register(WrappedHttpUrl)
 def _(url: WrappedHttpUrl) -> Path:
+    """Download Remote File via HTTP(S)
+
+    Files accessible via HTTP(S) are downloaded stored in a
+    temporary directory. The file name is taken either from the
+    "Content-Disposition" header field or the last fragment of
+    the supplied URL.
+
+    Notes:
+        - A connection timeout of 60 seconds is set when connecting
+          to the remote server
+
+    Args:
+        url (WrappedHttpUrl): Perviously converted/validated URL.
+
+    Returns:
+        Path: Local path of downloaded file.
+    """
     r = requests.get(url.location, stream=True, timeout=60)
     r.raise_for_status()
 
@@ -315,13 +359,32 @@ def _(url: WrappedHttpUrl) -> Path:
 
 @_dispatch_singular_file_download.register(WrappedFtpUrl)
 def _(url: WrappedFtpUrl) -> Path:
+    """Download Remote File via FTP
+
+    Files accessible via FTP are downloaded stored in a
+    temporary directory. The file name is taken from the
+    last fragment of the supplied URL.
+
+    Warnings:
+        - FTP is an insecure protocol and should probably not be
+          used in production
+
+    Notes:
+        - No connection timeout is set
+
+    Args:
+        url (WrappedHttpUrl): Perviously converted/validated URL.
+
+    Returns:
+        Path: Local path of downloaded file.
+    """
     out_name = url.path.rsplit("/", 1).pop()
 
     out_dir = TemporaryDirectory(prefix="cwl-input-staging-", delete=False).name
 
     full_out_path = Path(out_dir, out_name)
 
-    with FTP(url.server) as ftp:  #noqa: S321
+    with FTP(url.server) as ftp:  # noqa: S321
         if url.username:
             ftp.login(url.username, url.password)
         else:
@@ -333,10 +396,31 @@ def _(url: WrappedFtpUrl) -> Path:
     return full_out_path
 
 
-# NOTE: we're only ever exposing a path, not a complete File model as defined by CWL
 def _iteratively_stage_in_files(
     model: BaseModel, path_to_location: bool = False
 ) -> Tuple[Dict[str, List[Path]], type[BaseModel]]:
+    """Iteratively Stage-In `File` Arguments
+
+    Iterate over all fields of the process model instance and download
+    remote file resources. Other arguments are left untouched.
+
+    Since an OGC compliant server does not expose the entire `File` model
+    defined by the CWL standard, resolving them becomes easier as we do not
+    need to concern ourselves with additional (secondary) files. Optional
+    files, list of files and optional list of files are all handled.
+
+    Args:
+        model (BaseModel): Process instance model
+        path_to_location (bool, optional): Remap the path attribute of the `File`
+            model to `location`. Defaults to False.
+
+    Raises:
+        AssertionError: Unexpected code path.
+
+    Returns:
+        Tuple[Dict[str, List[Path]], type[BaseModel]]: Tuple of (1) argument name and list of
+            local file paths pointing to downloaded files and (2) updated process instance model.
+    """
     return_mapping: Dict[str, List[Path]] = {}
 
     for tag, val in model.__class__.model_fields.items():
@@ -412,16 +496,51 @@ def _iteratively_stage_in_files(
 
 
 def _get_local_catalog_base_directory(catalog: Catalog) -> Path:
+    """Get the Parent Directory of a STAC Catalog
+
+    Args:
+        catalog (Catalog): STAC Catalog
+
+    Returns:
+        Path: Parent directory of input STAC catalog
+    """
     return Path(catalog.get_self_href()).parent
 
 
 @singledispatch
-def _dispatch_stac_resolving(stac_obj) -> Catalog:
+def _dispatch_stac_resolving(stac_obj: pystac.STACObject) -> Catalog:
+    """Generic Function for Remote STAC Download
+
+    Args:
+        stac_obj (pystac.STACObject): In-memory representation of STAC object.
+
+    Raises:
+        NotImplementedError: Risen in case not-implemented STAC type is supplied.
+
+    Returns:
+        Catalog: Local path of of resolved and downloaded STAC Catalog.
+    """
     raise NotImplementedError("Generic STAC resoving to local catalog not implemented.")
 
 
 @_dispatch_stac_resolving.register(Catalog)
 def _(stac_obj: Catalog) -> Catalog:
+    """Generate Self-Contained STAC Catalog in Temporary Directory
+
+    Stage-in a STAC Catalog by generating a self-contained STAC
+    Catalog in the local file system. All items/children are saved under the same
+    directory but no actual data is downloaded.
+
+    Args:
+        stac_obj (Catalog): In-memory representation of STAC Catalog.
+
+    Raises:
+        RuntimeWarning: Always risen since stage-in of an entire STAC Catalog
+            seems unreasonable.
+
+    Returns:
+        Catalog: Local path to staged-in STAC Catalog.
+    """
     raise RuntimeWarning(
         "Using a catlog seems unreasonable, may be deprecated in the future."
     )
@@ -438,6 +557,21 @@ def _(stac_obj: Catalog) -> Catalog:
 
 @_dispatch_stac_resolving.register(ItemCollection)
 def _(stac_obj: ItemCollection) -> Catalog:
+    """Generate Self-Contained STAC Catalog in Temporary Directory
+
+    Stage-in a STAC ItemCollection by generating a self-contained STAC
+    Catalog in the local file system. All items are saved under the same
+    directory but no actual data is downloaded.
+
+    Args:
+        stac_obj (ItemCollection): In-memory representation of STAC ItemCollection.
+
+    Raises:
+        ValueError: Risen if input ItemCollection doesn't hold any items.
+
+    Returns:
+        Catalog: Local path to staged-in STAC Catalog.
+    """
     if len(stac_obj.items) == 0:
         raise ValueError("Empty ItemCollection")
 
@@ -459,6 +593,18 @@ def _(stac_obj: ItemCollection) -> Catalog:
 
 @_dispatch_stac_resolving.register(Item)
 def _(stac_obj: Item) -> Catalog:
+    """Generate Self-Contained STAC Catalog in Temporary Directory
+
+    Stage-in a STAC Item by generating a self-contained STAC
+    Catalog in the local file system. The item is saved under the same
+    directory but no actual data is downloaded.
+
+    Args:
+        stac_obj (Item): In-memory representation of STAC Item.
+
+    Returns:
+        Catalog: Local path to staged-in STAC Catalog.
+    """
     out_dir = TemporaryDirectory(prefix="cwl-input-staging", delete=False).name
 
     catalog: Catalog = Catalog(
@@ -476,6 +622,20 @@ def _(stac_obj: Item) -> Catalog:
 
 
 def _load_remote_stac_from_http_url(path: str) -> ItemCollection | Catalog | Item:
+    """Read STAC Object from Remote Location.
+
+    Args:
+        path (str): URL pointing to a remote STAC Object.
+
+    Raises:
+        ValidationError: Risen in case the supplied URL does not match
+            pydantic's HttpUrl-scheme.
+        ValueError: Risen in case the supplied URL does not point to
+            a STAC ItemCollection, STAC Catalog or STAC Item.
+
+    Returns:
+        ItemCollection | Catalog | Item: In-memory representation of STAC object.
+    """
     validated_url: HttpUrl = HttpUrl(path)
 
     try:
@@ -494,8 +654,25 @@ def _load_remote_stac_from_http_url(path: str) -> ItemCollection | Catalog | Ite
 
 
 def _load_local_stac_from_cwl_output(path: str) -> ItemCollection | Catalog | Item:
-    # NOTE: The best practive guide assumes a process generates a STAC catalog
-    #       that is named "catalog.json"
+    """Read STAC Object from Local Location.
+
+    Notes:
+        - The OGC Best Practice Guidelines state that a output STAC Catalog must
+          be named "catalog.json"
+
+    Args:
+        path (str): Path pointing to a local STAC Object.
+
+    Raises:
+        ValidationError: Risen in case the supplied URL does not match
+            pydantic's FileUrl-scheme.
+        ValueError: Risen in case the supplied URL does not point to
+            a STAC ItemCollection, STAC Catalog or STAC Item.
+
+    Returns:
+        ItemCollection | Catalog | Item: In-memory representation of STAC object.
+    """
+    # TODO: actually, only allow STAC Catalogs, no other outputs.
     validated_url: FileUrl = FileUrl(path + "/catalog.json")
     parsed_path: str = url2pathname(str(validated_url), require_scheme=True)
 
@@ -525,13 +702,13 @@ def _wolfgang_beltracchi(
     Thus, the encapsulating directory is preserved!
 
     Args:
-        key (str): _description_
-        value (Asset): _description_
-        source_trunk (str): _description_
-        destination_trunk (str): _description_
+        key (str): Asset key (name) in containing STAC object.
+        value (Asset): STAC Asset
+        source_trunk (str): Path to root of root STAC object containing the asset to copy.
+        destination_trunk (str): Path to new root of root STAC object containing the copied asset.
 
     Returns:
-        Dict[str, Asset]: _description_
+        Dict[str, Asset]: Mapping of asset key (name) in new STAC object to new Asset instance with copied data.
     """
     # check if asset href is a local absolute path, if not simply return
     asset_path: Path = Path(value.href)
@@ -550,17 +727,25 @@ def _wolfgang_beltracchi(
 def _copy_local_stac_catalog_to_new_trunk(
     stac_obj: Catalog, local_catalog_path: Path
 ) -> Catalog:
-    """_summary_
+    """Copy a STAC Catalog to new Trunk
+
+    Copy an entire STAC Catalog to a new location while retaining the orignal parent
+    directory name of the catalog. All assets, including the actual data pointed to, are
+    copied to the new location. The new STAC Catalog is self-contained.
+
+    Raises:
+        FileExistsError: The output directory pointed inferred in `local_catalog_path`
+            already exists.
 
     Note:
         Nothing from a self-contained STAC catalog can be outside of `Path(stac_obj.get_self_href()).parent`.
 
     Args:
-        stac_obj (Catalog): _description_
+        stac_obj (Catalog): In-memory STAC Catalog object to be copied.
         local_catalog_path (Path): Base directory to which outputs are staged.
 
     Returns:
-        Catalog: _description_
+        Catalog: Copied STAC Catalog poining to new location.
     """
     self_source_trunk: Path = Path(stac_obj.get_self_href()).parent
 
@@ -590,20 +775,33 @@ def _copy_local_stac_catalog_to_new_trunk(
     return catalog
 
 
-# NOTE: we're only ever exposing a path, not a complete Directory model as defined by CWL
-# NOTE: single-file-stac is deprecated since Dec, 22 2022!
-# It's not quite clear to me what the replacement format should be tbh.
-# Pystac in its current form isn't even able to identify single-file-stac (was able to hold
-# Item and Collection). Thus, the only solution would be to support collections,
-# catalogs and item collections;
-# ItemCollection according to pystac's documentation is closest to GeoJSON FeatureCollections
-# but can only hold Item-objects
-# I understand section '9.4.  Data Flow Management' in the sense that the platform should download
-# the data needed either upfront or lazily. I don't really get why because the program itself
-# must be able to read STAC itself anyway, but whatever
 def _iteratively_stage_in_directories(
     model: BaseModel, path_to_location: bool = False
 ) -> Tuple[Dict[str, List[Path]], type[BaseModel]]:
+    """Iteratively Stage-In `Directory` Arguments
+
+    Iterate over all fields of the process model instance and download/
+    stage-in remote STAC object inputs. Other arguments are left untouched.
+
+    Since an OGC compliant server does not expose the entire `Directory` model
+    defined by the CWL standard, resolving them becomes easier as we do not
+    need to concern ourselves with additional listings defined. Optional
+    STAC inputs, list of STAC inputs and optional list of STAC inputs are
+    all handled.
+
+    Args:
+        model (BaseModel): Process instance model
+        path_to_location (bool, optional): Remap the path attribute of the `Directory`
+            model to `location`. Defaults to False.
+
+    Raises:
+        AssertionError: Unexpected code path.
+
+    Returns:
+        Tuple[Dict[str, List[Path]], type[BaseModel]]: Tuple of (1) argument name and list of
+            local file paths pointing to base directory of staged-in STAC Catalogs
+            and (2) updated process instance model.
+    """
     return_mapping: Dict[str, List[Path]] = {}
 
     for tag, val in model.__class__.model_fields.items():
@@ -693,6 +891,26 @@ def _iteratively_stage_in_directories(
 def _iteratively_stage_out_files(
     results: Dict[str, Any], src_base: Path, dst_base: Path
 ) -> Tuple[Dict[str, List[Path]], Dict[str, Any]]:
+    """Iteratively Stage-Out all `File` Values
+
+    Iterate over all fields of the workflow/process return
+    dictionary and stage-out all entries of type `File`
+    to a persistent directory. Other arguments are left untouched
+
+    The updated dictionary fields are converted from CWL's
+    `File` model to local path URLs.
+
+    Args:
+        results (Dict[str, Any]): Workflow/Process results as dictionary.
+        src_base (Path): Temporary output directory base managed by an
+            instance of `LocalArtifactManager`.
+        dst_base (Path): Persistent output directory base managed by an
+            instance of `LocalArtifactManager`.
+
+    Returns:
+        Tuple[Dict[str, List[Path]], Dict[str, Any]]: Tuple of (1) argument name and list of
+            local file paths pointing to staged-out files and (2) updated return value dictionary.
+    """
     staged_out_files: Dict[str, List[Path]] = {}
     patched_result_dict: Dict[str, Any] = {}
 
@@ -744,6 +962,27 @@ def _iteratively_stage_out_files(
 def _iteratively_stage_out_directories(
     results: Dict[str, Any], dst_base: Path
 ) -> Tuple[Dict[str, List[Path]], Dict[str, Any]]:
+    """Iteratively Stage-Out all `Directory` Values
+
+    Iterate over all fields of the workflow/process return
+    dictionary and stage-out all entries of type `Directory`
+    to a persistent directory. Other arguments are left untouched
+
+    The updated dictionary fields are converted from CWL's
+    `Directory` model to local path URLs pointing to a "catalog.json".
+    In contrast to stage-out of files, the STAC Catalog itself can provide
+    the path to the "temporary output location", including any possibly
+    existing parent directories which are preserved.
+
+    Args:
+        results (Dict[str, Any]): Workflow/Process results as dictionary.
+        dst_base (Path): Persistent output directory base managed by an
+            instance of `LocalArtifactManager`.
+
+    Returns:
+        Tuple[Dict[str, List[Path]], Dict[str, Any]]: Tuple of (1) argument name and list of
+            local file paths pointing to staged-out files and (2) updated return value dictionary.
+    """
     staged_out_directories: Dict[str, List[Path]] = {}
     patched_result_dict: Dict[str, Any] = {}
 
