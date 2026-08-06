@@ -18,7 +18,22 @@ ALLOWED_ENCODING = (
 )
 
 
-async def load_and_validate_from_body(request: Request, w: str) -> dict:
+async def load_and_validate_from_body(request: Request, w: str | None) -> dict:
+    """Load and Validate a CWL Document from HTTP Body
+
+    Args:
+        request (Request): fastapi request object.
+        w (str | None): Optional fastapi query paramter specifying workflow entrypoint.
+
+    Raises:
+        RuntimeError: Content body is not in YAML or JSON format or malformed;
+            CWL couldn't be loaded.
+        ServiceException: CWL document doesn't adhere to CWL specification or
+            fails EOAP validation.
+
+    Returns:
+        dict: Loaded (but not parsed) CWL body.
+    """
     content_header: str = request.headers.get("Content-Type")
 
     body: bytes = await request.body()
@@ -38,6 +53,16 @@ async def load_and_validate_from_body(request: Request, w: str) -> dict:
 
 
 def _load_from_bytes(contents: bytes, format_hint: str) -> dict | None:
+    """Load a Dictionary from Bytes
+
+    Args:
+        contents (bytes): Bytes object
+        format_hint (str): Hint specifying whether contents is YAML or JSON-encoded.
+
+    Returns:
+        dict | None: Loaded dictionary or None, if object could not be loaded
+            by Python's YAML/JSON-decoders.
+    """
     if format_hint == "application/cwl+json":
         try:
             return json.loads(contents)
@@ -55,6 +80,31 @@ def _load_from_bytes(contents: bytes, format_hint: str) -> dict | None:
 
 
 def _is_valid_as_cwl(content: dict) -> bool:
+    """Validate a Dictionary against CWL's specification
+
+    Validation of CWL is more complex than simply checking
+    the structure of the supplied document, e.g. because identifiers
+    must be resolved and arguments checked for their type
+    compatibility.
+
+    Thus, the validation is delegated to `cwltool`, the reference
+    implementation developed alongside the CWL standard. However,
+    they don't offer a clean API to validate a CWL document. Thus,
+    this function hooks into their _CLI interface_ which operates
+    on a temporary file.
+
+    Notes:
+        - All CWL nodes are checked, i.e. the entire document not
+          just a single (entrypoint) node
+        - Any warnings etc. are gobbled
+
+    Args:
+        content (dict): In-memory representation of CWL document
+            to check.
+
+    Returns:
+        bool: True if CWL is valid, False otherwise.
+    """
     with tempfile.NamedTemporaryFile("w+t") as temporary_cwl_file:
         yaml.safe_dump(content, temporary_cwl_file)
 
@@ -75,36 +125,70 @@ def _is_valid_as_cwl(content: dict) -> bool:
 
 
 def _is_valid_as_eoap(content: dict, w: str | None = None) -> bool:
+    """Validate an EOAP against OGC's Requirements
+
+    The OGC Best Practice Guideline for EOAPs defines several
+    additional requiremtens, next to being a valid CWL document,
+    for a submitted process to be accepted. These can be found online
+    in the respective document:
+
+    Not all requirements can be checked without executing the EOAP,
+    which is why only a subset of requirement tests is performed.
+
+    Args:
+        content (dict): In-memory representation of valid CWL document
+        w (str | None, optional): Optional workflow entrypoint. Defaults to None.
+
+    Returns:
+        bool: True if EOAP is valid, False otherwise.
+    """
     cwl_object = parser.load_document(content, load_all=True)
 
     eoap_requirements_passed = [
-        test_eoap_requirement_07(cwl_object)
-        or print("test_eoap_requirement_07 failed"),
-        test_eoap_requirement_08(cwl_object)
-        or print("test_eoap_requirement_08 failed"),
-        test_eoap_requirement_09(cwl_object)
-        or print("test_eoap_requirement_09 failed"),
-        test_eoap_requirement_10(cwl_object)
-        or print("test_eoap_requirement_10 failed"),
-        test_eoap_requirement_11(content) or print("test_eoap_requirement_11 failed"),
-        test_eoap_requirement_12(cwl_object)
-        or print("test_eoap_requirement_12 failed"),
-        test_eoap_requirement_13(cwl_object)
-        or print("test_eoap_requirement_13 failed"),
-        test_eoap_requirement_14(cwl_object)
-        or print("test_eoap_requirement_14 failed"),
+        test_eoap_requirement_07(cwl_object),
+        test_eoap_requirement_08(cwl_object),
+        test_eoap_requirement_09(cwl_object),
+        test_eoap_requirement_10(cwl_object),
+        test_eoap_requirement_11(content),
     ]
 
     return all(eoap_requirements_passed)
 
 
 def test_eoap_requirement_07(cwl_object: list) -> bool:
+    """Test req/app-pck/cwl
+
+    The Application Package SHALL be a valid CWL document with
+    a "Workflow" class and one or more "CommandLineTool" classes.
+
+    Args:
+        cwl_object (list): List of CWL nodes.
+
+    Returns:
+        bool: True if requirement was passed.
+    """
     return any(map(lambda x: x.class_ == "Workflow", cwl_object)) and any(
         map(lambda x: x.class_ == "CommandLineTool", cwl_object)
     )
 
 
 def test_eoap_requirement_08(cwl_object: list) -> bool:
+    """Test req/app-pck/clt
+
+    The Application Package CWL CommandLineTool classes SHALL
+    contain the following elements:
+    - Identifier ("id")
+    - Command line name ("baseCommand")
+    - Input parameters ("inputs")
+    - Environment requirements ("requirements")
+    - Docker information ("DockerRequirement")
+
+    Args:
+        cwl_object (list): List of CWL nodes.
+
+    Returns:
+        bool: True if requirement was passed.
+    """
     clis: List[
         parser.cwl_v1_0.CommandLineTool
         | parser.cwl_v1_1.CommandLineTool
@@ -132,6 +216,20 @@ def test_eoap_requirement_08(cwl_object: list) -> bool:
 
 
 def test_eoap_requirement_09(cwl_object: list) -> bool:
+    """req/app-pck/wf
+
+    The Application Package CWL Workflow class SHALL contain
+    the following elements:
+    - Identifier ("id")
+    - Title ("label")
+    - Abstract ("doc")
+
+    Args:
+        cwl_object (list): List of CWL nodes.
+
+    Returns:
+        bool: True if requirement was passed.
+    """
     workflows: List[
         parser.cwl_v1_0.Workflow | parser.cwl_v1_1.Workflow | parser.cwl_v1_2.Workflow
     ] = filter(lambda x: x.class_ == "Workflow", cwl_object)
@@ -139,6 +237,20 @@ def test_eoap_requirement_09(cwl_object: list) -> bool:
 
 
 def test_eoap_requirement_10(cwl_object: list) -> bool:
+    """Test req/app-pck/wf-inputs
+
+    The Application Package CWL Workflow class "inputs" fields
+    SHALL contain the following elements:
+    - Identifier ("id")
+    - Title ("label")
+    - Abstract ("doc")
+
+    Args:
+        cwl_object (list): List of CWL nodes.
+
+    Returns:
+        bool: True if requirement was passed.
+    """
     workflows: List[
         parser.cwl_v1_0.Workflow | parser.cwl_v1_1.Workflow | parser.cwl_v1_2.Workflow
     ] = filter(lambda x: x.class_ == "Workflow", cwl_object)
@@ -154,16 +266,21 @@ def test_eoap_requirement_10(cwl_object: list) -> bool:
 
 
 def test_eoap_requirement_11(cwl_object: dict) -> bool:
-    """req/app-pck/metadata
+    """Test req/app-pck/metadata
 
     The Application Package CWL Workclass classes SHALL
     include additional metadata as defined in Table 1.
-    {
-      I.e., does a version tag exist?! This cannot be
-      checked by using the parsed cwl_util input beacause
-      the library discards top-level objects and only exposed
-      workflows, *-tools, steps etc.
-    }
+
+    I.e., does a version tag exist? This cannot be
+    checked by using the parsed cwl_util input beacause
+    the library discards top-level objects and only exposed
+    workflows, *-tools, steps etc.
+
+    Args:
+        cwl_object (list): List of CWL nodes.
+
+    Returns:
+        bool: True if requirement was passed.
     """
     if not isinstance(cwl_object, dict):
         return False
@@ -184,50 +301,3 @@ def test_eoap_requirement_11(cwl_object: dict) -> bool:
         return False
 
     return cwl_object.get(schema_org_key + ":version") is not None
-
-
-def test_eoap_requirement_12(cwl_object: list) -> bool:
-    """req/app-pck-stage-in/clt-stac
-
-    All input parameters of the CWL ComandLineTool
-    that require the staging of EO products SHALL
-    be of type Directory.
-
-    Note:
-        This cannot be checked beforehand.
-
-    Returns:
-        bool: True in all cases
-    """
-    return True
-
-
-def test_eoap_requirement_13(cwl_object: list) -> bool:
-    """req/app-pck-stage-in/wf-stac
-
-    Input parameters of the CWL Workflow that require
-    the staging of EO products SHALL be of type Directory.
-
-    Note:
-        This cannot be checked beforehand.
-
-    Returns:
-        bool: True in all cases
-    """
-    return True
-
-
-def test_eoap_requirement_14(cwl_object: list) -> bool:
-    """req/app-pck-stage-out/output-stac
-
-    The outputs field of the CommandLineTool that requires
-    the stage-out of EO products SHALL retrieve all
-    the files produced in the working directory.
-
-    Note:
-        This cannot be checked beforehand.
-
-    Returns:
-        bool: True in all cases
-    """
-    return True
