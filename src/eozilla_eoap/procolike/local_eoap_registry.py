@@ -12,6 +12,18 @@ from .eoap_process import EoapProcess
 
 
 class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
+    """Implementation of a Local Process Registry
+
+    Inheriting from Mapping gives us easy access to dict-like
+    interfaces.
+
+    Notes:
+        The attribute `registry_mapping` is needed in case a user supplies
+        an EOAP that contains multiple possible entrypoints and chooses one
+        that is not the first. In this case, correctly rebuilding the regitry
+        wouldn't work without modifying the CWL file content.
+    """
+
     def __init__(self, path: Path):
         self.path: Path = Path(path)
         self.registry_mapping: Path = Path(path, "process-mapping.csv")
@@ -27,6 +39,14 @@ class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
         return len(self._eoaps)
 
     def configure(self) -> None:
+        """Configure the Registry Instance
+
+        If the user-specified directory to place registered EOAPs in
+        does not exist, create it. Same for the persistency mapping.
+
+        In case there are no Processes, try loading them from the persistent
+        registry directory.
+        """
         if not self.path.exists():
             self.path.mkdir(parents=True, exist_ok=True)
 
@@ -74,17 +94,21 @@ class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
         return new_eoap
 
     def read(self, name: str) -> EoapProcess:
+        """See [`Registry.read`][eozilla_eoap.interfaces.Registry]"""
         return self._eoaps.get(name)
 
     def read_all(self) -> Dict[str, EoapProcess]:
+        """See [`Registry.read_all`][eozilla_eoap.interfaces.Registry]"""
         return self._eoaps
 
     def update(self, contents: dict, entrypoint: str) -> EoapProcess:
+        """See [`Registry.update`][eozilla_eoap.interfaces.Registry]"""
         return self.create(
             contents=contents, entrypoint=entrypoint, ignore_existing=True
         )
 
     def delete(self, name: str) -> None:
+        """See [`Registry.delete`][eozilla_eoap.interfaces.Registry]"""
         cwl_path: Path = self.path / Path(name + ".cwl")
 
         if not cwl_path.exists() or name not in self._eoaps:
