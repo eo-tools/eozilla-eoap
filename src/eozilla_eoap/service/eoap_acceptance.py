@@ -78,33 +78,33 @@ def _is_valid_as_eoap(content: dict, w: str | None = None) -> bool:
     cwl_object = parser.load_document(content, load_all=True)
 
     eoap_requirements_passed = [
-        test_eoap_requirement_07(cwl_object)
+        check_eoap_requirement_07(cwl_object)
         or print("test_eoap_requirement_07 failed"),
-        test_eoap_requirement_08(cwl_object)
+        check_eoap_requirement_08(cwl_object)
         or print("test_eoap_requirement_08 failed"),
-        test_eoap_requirement_09(cwl_object)
+        check_eoap_requirement_09(cwl_object)
         or print("test_eoap_requirement_09 failed"),
-        test_eoap_requirement_10(cwl_object)
+        check_eoap_requirement_10(cwl_object)
         or print("test_eoap_requirement_10 failed"),
-        test_eoap_requirement_11(content) or print("test_eoap_requirement_11 failed"),
-        test_eoap_requirement_12(cwl_object)
+        check_eoap_requirement_11(content) or print("test_eoap_requirement_11 failed"),
+        check_eoap_requirement_12(cwl_object)
         or print("test_eoap_requirement_12 failed"),
-        test_eoap_requirement_13(cwl_object)
+        check_eoap_requirement_13(cwl_object)
         or print("test_eoap_requirement_13 failed"),
-        test_eoap_requirement_14(cwl_object)
+        check_eoap_requirement_14(cwl_object)
         or print("test_eoap_requirement_14 failed"),
     ]
 
     return all(eoap_requirements_passed)
 
 
-def test_eoap_requirement_07(cwl_object: list) -> bool:
+def check_eoap_requirement_07(cwl_object: list) -> bool:
     return any(map(lambda x: x.class_ == "Workflow", cwl_object)) and any(
         map(lambda x: x.class_ == "CommandLineTool", cwl_object)
     )
 
 
-def test_eoap_requirement_08(cwl_object: list) -> bool:
+def check_eoap_requirement_08(cwl_object: list) -> bool:
     clis: List[
         parser.cwl_v1_0.CommandLineTool
         | parser.cwl_v1_1.CommandLineTool
@@ -131,14 +131,14 @@ def test_eoap_requirement_08(cwl_object: list) -> bool:
     )
 
 
-def test_eoap_requirement_09(cwl_object: list) -> bool:
+def check_eoap_requirement_09(cwl_object: list) -> bool:
     workflows: List[
         parser.cwl_v1_0.Workflow | parser.cwl_v1_1.Workflow | parser.cwl_v1_2.Workflow
     ] = filter(lambda x: x.class_ == "Workflow", cwl_object)
     return all(map(lambda x: x.id and x.label and x.doc, workflows))
 
 
-def test_eoap_requirement_10(cwl_object: list) -> bool:
+def check_eoap_requirement_10(cwl_object: list) -> bool:
     workflows: List[
         parser.cwl_v1_0.Workflow | parser.cwl_v1_1.Workflow | parser.cwl_v1_2.Workflow
     ] = filter(lambda x: x.class_ == "Workflow", cwl_object)
@@ -153,7 +153,7 @@ def test_eoap_requirement_10(cwl_object: list) -> bool:
     return True
 
 
-def test_eoap_requirement_11(cwl_object: dict) -> bool:
+def check_eoap_requirement_11(cwl_object: dict) -> bool:
     """req/app-pck/metadata
 
     The Application Package CWL Workclass classes SHALL
@@ -186,7 +186,7 @@ def test_eoap_requirement_11(cwl_object: dict) -> bool:
     return cwl_object.get(schema_org_key + ":version") is not None
 
 
-def test_eoap_requirement_12(cwl_object: list) -> bool:
+def check_eoap_requirement_12(cwl_object: list) -> bool:
     """req/app-pck-stage-in/clt-stac
 
     All input parameters of the CWL ComandLineTool
@@ -202,7 +202,7 @@ def test_eoap_requirement_12(cwl_object: list) -> bool:
     return True
 
 
-def test_eoap_requirement_13(cwl_object: list) -> bool:
+def check_eoap_requirement_13(cwl_object: list) -> bool:
     """req/app-pck-stage-in/wf-stac
 
     Input parameters of the CWL Workflow that require
@@ -217,7 +217,7 @@ def test_eoap_requirement_13(cwl_object: list) -> bool:
     return True
 
 
-def test_eoap_requirement_14(cwl_object: list) -> bool:
+def check_eoap_requirement_14(cwl_object: list) -> bool:
     """req/app-pck-stage-out/output-stac
 
     The outputs field of the CommandLineTool that requires
