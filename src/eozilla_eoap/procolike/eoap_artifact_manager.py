@@ -311,7 +311,7 @@ def _dispatch_singular_file_download(url: AnyUrl) -> Path:
         url (AnyUrl): Previously converted URL.
 
     Raises:
-        TypeError: Risen in case not-implemented URL type is supplied.
+        TypeError: Raised in case not-implemented URL type is supplied.
 
     Returns:
         Path: Local path of downloaded file.
@@ -515,7 +515,7 @@ def _dispatch_stac_resolving(stac_obj: pystac.STACObject) -> Catalog:
         stac_obj (pystac.STACObject): In-memory representation of STAC object.
 
     Raises:
-        NotImplementedError: Risen in case not-implemented STAC type is supplied.
+        NotImplementedError: Raised in case not-implemented STAC type is supplied.
 
     Returns:
         Catalog: Local path of of resolved and downloaded STAC Catalog.
@@ -535,7 +535,7 @@ def _(stac_obj: Catalog) -> Catalog:
         stac_obj (Catalog): In-memory representation of STAC Catalog.
 
     Raises:
-        RuntimeWarning: Always risen since stage-in of an entire STAC Catalog
+        RuntimeWarning: Always Raised since stage-in of an entire STAC Catalog
             seems unreasonable.
 
     Returns:
@@ -567,7 +567,7 @@ def _(stac_obj: ItemCollection) -> Catalog:
         stac_obj (ItemCollection): In-memory representation of STAC ItemCollection.
 
     Raises:
-        ValueError: Risen if input ItemCollection doesn't hold any items.
+        ValueError: Raised if input ItemCollection doesn't hold any items.
 
     Returns:
         Catalog: Local path to staged-in STAC Catalog.
@@ -628,9 +628,9 @@ def _load_remote_stac_from_http_url(path: str) -> ItemCollection | Catalog | Ite
         path (str): URL pointing to a remote STAC Object.
 
     Raises:
-        ValidationError: Risen in case the supplied URL does not match
+        ValidationError: Raised in case the supplied URL does not match
             pydantic's HttpUrl-scheme.
-        ValueError: Risen in case the supplied URL does not point to
+        ValueError: Raised in case the supplied URL does not point to
             a STAC ItemCollection, STAC Catalog or STAC Item.
 
     Returns:
@@ -664,9 +664,9 @@ def _load_local_stac_from_cwl_output(path: str) -> ItemCollection | Catalog | It
         path (str): Path pointing to a local STAC Object.
 
     Raises:
-        ValidationError: Risen in case the supplied URL does not match
+        ValidationError: Raised in case the supplied URL does not match
             pydantic's FileUrl-scheme.
-        ValueError: Risen in case the supplied URL does not point to
+        ValueError: Raised in case the supplied URL does not point to
             a STAC ItemCollection, STAC Catalog or STAC Item.
 
     Returns:
