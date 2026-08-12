@@ -1,9 +1,13 @@
+import json
+from pathlib import Path
 from typing import List
-from unittest import TestCase
-from unittest.mock import Mock
+from unittest import IsolatedAsyncioTestCase, TestCase
+from unittest.mock import AsyncMock, PropertyMock
 
 import yaml
 from cwl_utils.parser import cwl_v1_2
+from requests import Request
+from wraptile.exceptions import ServiceException
 
 from eozilla_eoap.service.eoap_acceptance import (
     _is_valid_as_cwl,
@@ -18,58 +22,118 @@ from eozilla_eoap.service.eoap_acceptance import (
 )
 
 
+class AyncEoapAcceptanceTest(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.static_resources_path: Path = Path(
+            Path(__file__).parent.parent, "resources", "cwls"
+        )
+
+        with open(Path(self.static_resources_path, "echo-workflow.cwl"), "rb") as f:
+            self.valid_dict = yaml.safe_load(self.valid_bytes)
+
+        self.mock_request = AsyncMock(Request)
+        self.mock_request.body = AsyncMock()
+        type(self.mock_request).headers = PropertyMock(dict)
+        self.mock_request.headers.get.return_value = "application/cwl"
+
+    async def test_error_on_empty_body(self):
+        self.mock_request.body.return_value = b""
+
+        with self.assertRaises(RuntimeError):
+            await load_and_validate_from_body(self.mock_request, w=None)
+
+    async def test_error_on_invalid_cwl(self):
+        invalid_cwl = self.valid_dict.copy()
+        del invalid_cwl["$graph"]
+
+        self.mock_request.body.return_value = json.dumps(invalid_cwl).encode("utf-8")
+
+        with self.assertRaises(ServiceException):
+            await load_and_validate_from_body(self.mock_request, w=None)
+
+    async def test_error_on_invalid_eoap(self):
+        invalid_eoap = self.valid_dict.copy()
+        del invalid_eoap["$namespaces"]
+
+        self.mock_request.body.return_value = json.dumps(invalid_eoap).encode("utf-8")
+
+        with self.assertRaises(ServiceException):
+            await load_and_validate_from_body(self.mock_request, w=None)
+
+    async def test_correctly_load_from_json(self):
+        with open(Path(self.static_resources_path, "echo-workflow.json"), "rt") as f:
+            self.mock_request.body.return_value = f.read()
+
+            d = await load_and_validate_from_body(self.mock_request, w=None)
+
+        self.assertIsInstance(d, dict)
+
+    async def test_correctly_load_from_yaml(self):
+        with open(Path(self.static_resources_path, "echo-workflow.cwl"), "rt") as f:
+            self.mock_request.body.return_value = f.read()
+
+            d = await load_and_validate_from_body(self.mock_request, w=None)
+
+        self.assertIsInstance(d, dict)
+
+
 class EoapAcceptanceTest(TestCase):
-    def test_error_on_empty_body(self):
-        # load_and_validate_form-body
-        self.fail("`test_error_on_empty_body` is not implemented")
-
-    def test_error_on_invalid_cwl(self):
-        # load_and_validate_form-body
-        self.fail("`test_error_on_invalid_cwl` is not implemented")
-
-    def test_error_on_invalid_eoap(self):
-        # load_and_validate_form-body
-        self.fail("`test_error_on_invalid_eoap` is not implemented")
-
-    def test_correctly_load_from_json(self):
-        # load_and_validate_form-body
-        self.fail("`test_correctly_load_from_json` is not implemented")
-
-    def test_correctly_load_from_yaml(self):
-        # load_and_validate_form-body
-        self.fail("`test_correctly_load_from_yaml` is not implemented")
+    def setUp(self):
+        self.static_resources_path: Path = Path(
+            Path(__file__).parent.parent, "resources", "cwls"
+        )
 
     def test_none_on_invalid_input(self):
-        # _load_from_bytes
-        self.fail("`test_none_on_invalid_input` is not implemented")
+        with open(Path(self.static_resources_path, "invalid-document.cwl"), "rt") as f:
+            loaded_cwl = _load_from_bytes(f.read(), "application/cwl+json")
+
+        self.assertIsNone(loaded_cwl)
 
     def test_can_load_json(self):
-        # _load_from_bytes
-        self.fail("`test_can_load_json` is not implemented")
+        with open(Path(self.static_resources_path, "echo-workflow.json"), "rt") as f:
+            loaded_cwl = _load_from_bytes(f.read(), "application/cwl+json")
+
+        self.assertIsInstance(loaded_cwl, dict)
 
     def test_can_load_yaml(self):
-        # _load_from_bytes
-        self.fail("`test_can_load_yaml` is not implemented")
+        with open(Path(self.static_resources_path, "echo-workflow.cwl"), "rt") as f:
+            loaded_cwl = _load_from_bytes(f.read(), "application/cwl+yaml")
 
-    def test_can_load_wrong_hint(self):
-        # _load_from_bytes
-        self.fail("`test_can_load_wrong_hint` is not implemented")
+        self.assertIsInstance(loaded_cwl, dict)
+
+    def test_can_load_generic_hint(self):
+        with open(Path(self.static_resources_path, "echo-workflow.cwl"), "rt") as f:
+            loaded_cwl = _load_from_bytes(f.read(), "application/cwl")
+
+        self.assertIsInstance(loaded_cwl, dict)
 
     def test_invalid_cwl_is_false(self):
-        # TODO: Clarify if validation should be mocked or whether actually testing validity
-        #       is preferred/correct/required
-        self.fail("`test_invalid_cwl_is_false` is not implemented")
+        with open(
+            Path(self.static_resources_path, "invalid-hello-world.cwl"), "rt"
+        ) as f:
+            loaded_cwl = yaml.safe_load(f)
+
+        self.assertFalse(_is_valid_as_cwl(loaded_cwl))
 
     def test_valid_cwl_is_true(self):
-        # TODO: Clarify if validation should be mocked or whether actually testing validity
-        #       is preferred/correct/required
-        self.fail("`test_valid_cwl_is_true` is not implemented")
+        with open(Path(self.static_resources_path, "valid-hello-world.cwl"), "rt") as f:
+            loaded_cwl = yaml.safe_load(f)
+
+        self.assertTrue(_is_valid_as_cwl(loaded_cwl))
 
     def test_invalid_eoap_is_false(self):
-        self.fail("`test_invalid_eoap_is_false` is not implemented")
+        with open(Path(self.static_resources_path, "primes-workflow.cwl"), "rt") as f:
+            loaded_cwl = yaml.safe_load(f)
+
+        del loaded_cwl["s:version"]
+
+        self.assertFalse(_is_valid_as_eoap(loaded_cwl))
 
     def test_valid_eoap_is_true(self):
-        self.fail("`test_valid_eoap_is_true` is not implemented")
+        with open(Path(self.static_resources_path, "primes-workflow.cwl"), "rt") as f:
+            loaded_cwl = yaml.safe_load(f)
+
+        self.assertTrue(_is_valid_as_eoap(loaded_cwl))
 
     # Requirement 7: req/app-pck/cwl
     # NOTE: The checks don't actually incorporate testing for validity of supplied CWL;
