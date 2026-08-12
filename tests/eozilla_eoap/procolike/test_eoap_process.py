@@ -663,52 +663,83 @@ class ModelClassGenerationTest(TestCase):
 
 
 class PydanticResolvingTest(TestCase):
-    def test_pydantic_tuple_without_defaults(self):
-        # TODO: actually, these should be sub-tests as well. At least whereever possible
+    def test_boolean_without_default(self):
         self.assertEqual(bool, _resolve_to_pydantic_tuple("boolean"))
+
+    def test_int_without_default(self):
         self.assertEqual(int, _resolve_to_pydantic_tuple("int"))
+
+    def test_long_without_default(self):
         self.assertEqual(int, _resolve_to_pydantic_tuple("long"))
+
+    def test_float_without_default(self):
         self.assertEqual(float, _resolve_to_pydantic_tuple("float"))
+
+    def test_double_without_default(self):
         self.assertEqual(float, _resolve_to_pydantic_tuple("double"))
+
+    def test_string_without_default(self):
         self.assertEqual(str, _resolve_to_pydantic_tuple("string"))
+
+    def test_file_without_default(self):
         self.assertEqual(File, _resolve_to_pydantic_tuple("File"))
+
+    def test_directory_without_default(self):
         self.assertEqual(Directory, _resolve_to_pydantic_tuple("Directory"))
+
+    def test_list_boolean_without_default(self):
         self.assertEqual(
             list[bool],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(items="boolean", type_="array")
             ),
         )
+
+    def test_list_int_without_default(self):
         self.assertEqual(
             list[int],
             _resolve_to_pydantic_tuple(InputArraySchema(items="int", type_="array")),
         )
+
+    def test_list_long_without_default(self):
         self.assertEqual(
             list[int],
             _resolve_to_pydantic_tuple(InputArraySchema(items="long", type_="array")),
         )
+
+    def test_list_float_without_default(self):
         self.assertEqual(
             list[float],
             _resolve_to_pydantic_tuple(InputArraySchema(items="float", type_="array")),
         )
+
+    def test_list_double_without_default(self):
         self.assertEqual(
             list[float],
             _resolve_to_pydantic_tuple(InputArraySchema(items="double", type_="array")),
         )
+
+    def test_list_string_without_default(self):
         self.assertEqual(
             list[str],
             _resolve_to_pydantic_tuple(InputArraySchema(items="string", type_="array")),
         )
+
+    def test_list_file_without_default(self):
         self.assertEqual(
             list[File],
             _resolve_to_pydantic_tuple(InputArraySchema(items="File", type_="array")),
         )
+
+    def test_list_directory_without_default(self):
         self.assertEqual(
             list[Directory],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(items="Directory", type_="array")
             ),
         )
+
+    def test_list_list_boolean_without_default(self):
         self.assertEqual(
             list[list[bool]],
             _resolve_to_pydantic_tuple(
@@ -718,6 +749,8 @@ class PydanticResolvingTest(TestCase):
                 )
             ),
         )
+
+    def test_list_list_int_without_default(self):
         self.assertEqual(
             list[list[int]],
             _resolve_to_pydantic_tuple(
@@ -726,6 +759,8 @@ class PydanticResolvingTest(TestCase):
                 )
             ),
         )
+
+    def test_list_list_long_without_default(self):
         self.assertEqual(
             list[list[int]],
             _resolve_to_pydantic_tuple(
@@ -734,6 +769,8 @@ class PydanticResolvingTest(TestCase):
                 )
             ),
         )
+
+    def test_list_list_float_without_default(self):
         self.assertEqual(
             list[list[float]],
             _resolve_to_pydantic_tuple(
@@ -742,6 +779,8 @@ class PydanticResolvingTest(TestCase):
                 )
             ),
         )
+
+    def test_list_list_double_without_default(self):
         self.assertEqual(
             list[list[float]],
             _resolve_to_pydantic_tuple(
@@ -750,6 +789,8 @@ class PydanticResolvingTest(TestCase):
                 )
             ),
         )
+
+    def test_list_list_string_without_default(self):
         self.assertEqual(
             list[list[str]],
             _resolve_to_pydantic_tuple(
@@ -758,6 +799,8 @@ class PydanticResolvingTest(TestCase):
                 )
             ),
         )
+
+    def test_list_list_file_without_default(self):
         self.assertEqual(
             list[list[File]],
             _resolve_to_pydantic_tuple(
@@ -766,6 +809,8 @@ class PydanticResolvingTest(TestCase):
                 )
             ),
         )
+
+    def test_list_list_directory_without_default(self):
         self.assertEqual(
             list[list[Directory]],
             _resolve_to_pydantic_tuple(
@@ -776,32 +821,46 @@ class PydanticResolvingTest(TestCase):
             ),
         )
 
-    def test_pydantic_tuple_with_defaults(self):
+    def test_boolean_with_default(self):
         self.assertEqual(
             (bool, False), _resolve_to_pydantic_tuple("boolean", arg_default=False)
         )
+
+    def test_int_with_default(self):
         self.assertEqual((int, 42), _resolve_to_pydantic_tuple("int", arg_default=42))
+
+    def test_long_with_default(self):
         self.assertEqual(
             (int, 42_000_000),
             _resolve_to_pydantic_tuple("long", arg_default=42_000_000),
         )
+
+    def test_float_with_default(self):
         self.assertEqual(
             (float, 3.141), _resolve_to_pydantic_tuple("float", arg_default=3.141)
         )
+
+    def test_double_with_default(self):
         self.assertEqual(
             (float, 3.141e20),
             _resolve_to_pydantic_tuple("double", arg_default=3.141e20),
         )
+
+    def test_string_with_default(self):
         self.assertEqual(
             (str, "Hello, World"),
             _resolve_to_pydantic_tuple("string", arg_default="Hello, World"),
         )
+
+    def test_file_with_default(self):
         self.assertEqual(
             (File, "https://fileserver.example.com/path/to/file.txt"),
             _resolve_to_pydantic_tuple(
                 "File", arg_default="https://fileserver.example.com/path/to/file.txt"
             ),
         )
+
+    def test_directory_with_default(self):
         self.assertEqual(
             (Directory, "https://directoryerver.example.com/path/to/directory"),
             _resolve_to_pydantic_tuple(
@@ -809,6 +868,8 @@ class PydanticResolvingTest(TestCase):
                 arg_default="https://directoryerver.example.com/path/to/directory",
             ),
         )
+
+    def test_list_boolean_with_default(self):
         self.assertEqual(
             (
                 list[bool],
@@ -817,9 +878,14 @@ class PydanticResolvingTest(TestCase):
                 ],
             ),
             _resolve_to_pydantic_tuple(
-                InputArraySchema(items="boolean", type_="array"), arg_default=[False,]
+                InputArraySchema(items="boolean", type_="array"),
+                arg_default=[
+                    False,
+                ],
             ),
         )
+
+    def test_list_int_with_default(self):
         self.assertEqual(
             (
                 list[int],
@@ -828,9 +894,14 @@ class PydanticResolvingTest(TestCase):
                 ],
             ),
             _resolve_to_pydantic_tuple(
-                InputArraySchema(items="int", type_="array"), arg_default=[42,]
+                InputArraySchema(items="int", type_="array"),
+                arg_default=[
+                    42,
+                ],
             ),
         )
+
+    def test_list_long_with_default(self):
         self.assertEqual(
             (
                 list[int],
@@ -839,9 +910,14 @@ class PydanticResolvingTest(TestCase):
                 ],
             ),
             _resolve_to_pydantic_tuple(
-                InputArraySchema(items="long", type_="array"), arg_default=[42_000_000,]
+                InputArraySchema(items="long", type_="array"),
+                arg_default=[
+                    42_000_000,
+                ],
             ),
         )
+
+    def test_list_float_with_default(self):
         self.assertEqual(
             (
                 list[float],
@@ -850,9 +926,14 @@ class PydanticResolvingTest(TestCase):
                 ],
             ),
             _resolve_to_pydantic_tuple(
-                InputArraySchema(items="float", type_="array"), arg_default=[3.141,]
+                InputArraySchema(items="float", type_="array"),
+                arg_default=[
+                    3.141,
+                ],
             ),
         )
+
+    def test_list_double_with_default(self):
         self.assertEqual(
             (
                 list[float],
@@ -861,9 +942,14 @@ class PydanticResolvingTest(TestCase):
                 ],
             ),
             _resolve_to_pydantic_tuple(
-                InputArraySchema(items="double", type_="array"), arg_default=[3.141e20,]
+                InputArraySchema(items="double", type_="array"),
+                arg_default=[
+                    3.141e20,
+                ],
             ),
         )
+
+    def test_list_string_with_default(self):
         self.assertEqual(
             (
                 list[str],
@@ -873,9 +959,13 @@ class PydanticResolvingTest(TestCase):
             ),
             _resolve_to_pydantic_tuple(
                 InputArraySchema(items="string", type_="array"),
-                arg_default=["Hello, World",],
+                arg_default=[
+                    "Hello, World",
+                ],
             ),
         )
+
+    def test_list_file_with_default(self):
         self.assertEqual(
             (
                 list[File],
@@ -888,9 +978,13 @@ class PydanticResolvingTest(TestCase):
                     items="File",
                     type_="array",
                 ),
-                arg_default=["https://fileserver.example.com/path/to/file.txt",],
+                arg_default=[
+                    "https://fileserver.example.com/path/to/file.txt",
+                ],
             ),
         )
+
+    def test_list_directory_with_default(self):
         self.assertEqual(
             (
                 list[Directory],
@@ -903,9 +997,13 @@ class PydanticResolvingTest(TestCase):
                     items="Directory",
                     type_="array",
                 ),
-                arg_default=["https://directoryerver.example.com/path/to/directory",],
+                arg_default=[
+                    "https://directoryerver.example.com/path/to/directory",
+                ],
             ),
         )
+
+    def test_list_list_boolean_with_default(self):
         self.assertEqual(
             (
                 list[list[bool]],
@@ -920,9 +1018,15 @@ class PydanticResolvingTest(TestCase):
                     items=InputArraySchema(items="boolean", type_="array"),
                     type_="array",
                 ),
-                arg_default=[[False,],],
+                arg_default=[
+                    [
+                        False,
+                    ],
+                ],
             ),
         )
+
+    def test_list_list_int_with_default(self):
         self.assertEqual(
             (
                 list[list[int]],
@@ -937,9 +1041,15 @@ class PydanticResolvingTest(TestCase):
                     items=InputArraySchema(items="int", type_="array"),
                     type_="array",
                 ),
-                arg_default=[[42,],],
+                arg_default=[
+                    [
+                        42,
+                    ],
+                ],
             ),
         )
+
+    def test_list_list_long_with_default(self):
         self.assertEqual(
             (
                 list[list[int]],
@@ -954,9 +1064,15 @@ class PydanticResolvingTest(TestCase):
                     items=InputArraySchema(items="long", type_="array"),
                     type_="array",
                 ),
-                arg_default=[[42_000_000,],],
+                arg_default=[
+                    [
+                        42_000_000,
+                    ],
+                ],
             ),
         )
+
+    def test_list_list_float_with_default(self):
         self.assertEqual(
             (
                 list[list[float]],
@@ -970,9 +1086,15 @@ class PydanticResolvingTest(TestCase):
                 InputArraySchema(
                     items=InputArraySchema(items="float", type_="array"), type_="array"
                 ),
-                arg_default=[[3.141,],],
+                arg_default=[
+                    [
+                        3.141,
+                    ],
+                ],
             ),
         )
+
+    def test_list_list_doule_with_default(self):
         self.assertEqual(
             (
                 list[list[float]],
@@ -986,9 +1108,15 @@ class PydanticResolvingTest(TestCase):
                 InputArraySchema(
                     items=InputArraySchema(items="double", type_="array"), type_="array"
                 ),
-                arg_default=[[3.141e20,],],
+                arg_default=[
+                    [
+                        3.141e20,
+                    ],
+                ],
             ),
         )
+
+    def test_list_list_string_with_default(self):
         self.assertEqual(
             (
                 list[list[str]],
@@ -1002,9 +1130,15 @@ class PydanticResolvingTest(TestCase):
                 InputArraySchema(
                     items=InputArraySchema(items="string", type_="array"), type_="array"
                 ),
-                arg_default=[["Hello, World",],],
+                arg_default=[
+                    [
+                        "Hello, World",
+                    ],
+                ],
             ),
         )
+
+    def test_list_list_file_with_default(self):
         self.assertEqual(
             (
                 list[list[File]],
@@ -1018,9 +1152,15 @@ class PydanticResolvingTest(TestCase):
                 InputArraySchema(
                     items=InputArraySchema(items="File", type_="array"), type_="array"
                 ),
-                arg_default=[["https://fileserver.example.com/path/to/file.txt",],],
+                arg_default=[
+                    [
+                        "https://fileserver.example.com/path/to/file.txt",
+                    ],
+                ],
             ),
         )
+
+    def test_list_list_directory_with_default(self):
         self.assertEqual(
             (
                 list[list[Directory]],
@@ -1035,6 +1175,10 @@ class PydanticResolvingTest(TestCase):
                     items=InputArraySchema(items="Directory", type_="array"),
                     type_="array",
                 ),
-                arg_default=[["https://directoryerver.example.com/path/to/directory",],],
+                arg_default=[
+                    [
+                        "https://directoryerver.example.com/path/to/directory",
+                    ],
+                ],
             ),
         )
