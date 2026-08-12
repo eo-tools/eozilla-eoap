@@ -560,7 +560,7 @@ class ProcessModelNoDefaults(BaseModel):
 class ProcessModelsWithDefaults(BaseModel):
     flag_value: bool = Field(True)
     int_value: int = Field(42)
-    long_value: int = Field(42000000000000000000)
+    long_value: int = Field(42_000_000)
     float_value: float = Field(3.141)
     double_value: float = Field(3.141e308)
     string_value: str = Field("Hello, World")
@@ -616,7 +616,7 @@ class ModelClassGenerationTest(TestCase):
             WorkflowInputParameter(id="flag_value", type_="boolean", default=True),
             WorkflowInputParameter(id="int_value", type_="int", default=42),
             WorkflowInputParameter(
-                id="long_value", type_="long", default=42000000000000000000
+                id="long_value", type_="long", default=42_000_000
             ),
             WorkflowInputParameter(id="float_value", type_="float", default=3.141),
             WorkflowInputParameter(
