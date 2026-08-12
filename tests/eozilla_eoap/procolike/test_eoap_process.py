@@ -1,6 +1,8 @@
 from typing import Literal, TypeVar
 from unittest import TestCase
 
+from cwl_utils.parser.cwl_v1_2 import Directory as CwlDirectory
+from cwl_utils.parser.cwl_v1_2 import File as CwlFile
 from cwl_utils.parser.cwl_v1_2 import (
     InputArraySchema,
     InputEnumSchema,
@@ -10,8 +12,6 @@ from cwl_utils.parser.cwl_v1_2 import (
     OutputRecordSchema,
     WorkflowInputParameter,
     WorkflowOutputParameter,
-    File as CwlFile,
-    Directory as CwlDirectory,
 )
 from gavicore.models import Schema
 from pydantic import BaseModel, Field
@@ -241,7 +241,8 @@ class OgcSchemaResolvingTest(TestCase):
                 self.assertEqual(nullable_1, nullable_2)
                 self.assertEqual(unbounded_1, unbounded_2)
 
-    def test_input_nullable_cwltypes_must_have_defaults(self): ...
+    def test_input_nullable_cwltypes_must_have_defaults(self):
+        self.fail("`test_input_nullable_cwltypes_must_have_defaults` not implemented")
 
     def test_input_array_of_cwltypes_without_default(self):
         self.maxDiff = None
@@ -673,63 +674,43 @@ class PydanticResolvingTest(TestCase):
         self.assertEqual(File, _resolve_to_pydantic_tuple("File"))
         self.assertEqual(Directory, _resolve_to_pydantic_tuple("Directory"))
         self.assertEqual(
-            [
-                bool,
-            ],
+            list[bool],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(items="boolean", type_="array")
             ),
         )
         self.assertEqual(
-            [
-                int,
-            ],
+            list[int],
             _resolve_to_pydantic_tuple(InputArraySchema(items="int", type_="array")),
         )
         self.assertEqual(
-            [
-                int,
-            ],
+            list[int],
             _resolve_to_pydantic_tuple(InputArraySchema(items="long", type_="array")),
         )
         self.assertEqual(
-            [
-                float,
-            ],
+            list[float],
             _resolve_to_pydantic_tuple(InputArraySchema(items="float", type_="array")),
         )
         self.assertEqual(
-            [
-                float,
-            ],
+            list[float],
             _resolve_to_pydantic_tuple(InputArraySchema(items="double", type_="array")),
         )
         self.assertEqual(
-            [
-                str,
-            ],
+            list[str],
             _resolve_to_pydantic_tuple(InputArraySchema(items="string", type_="array")),
         )
         self.assertEqual(
-            [
-                File,
-            ],
+            list[File],
             _resolve_to_pydantic_tuple(InputArraySchema(items="File", type_="array")),
         )
         self.assertEqual(
-            [
-                Directory,
-            ],
+            list[Directory],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(items="Directory", type_="array")
             ),
         )
         self.assertEqual(
-            [
-                [
-                    bool,
-                ],
-            ],
+            list[list[bool]],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(
                     items=InputArraySchema(items="boolean", type_="array"),
@@ -738,11 +719,7 @@ class PydanticResolvingTest(TestCase):
             ),
         )
         self.assertEqual(
-            [
-                [
-                    int,
-                ],
-            ],
+            list[list[int]],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(
                     items=InputArraySchema(items="int", type_="array"), type_="array"
@@ -750,11 +727,7 @@ class PydanticResolvingTest(TestCase):
             ),
         )
         self.assertEqual(
-            [
-                [
-                    int,
-                ],
-            ],
+            list[list[int]],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(
                     items=InputArraySchema(items="long", type_="array"), type_="array"
@@ -762,11 +735,7 @@ class PydanticResolvingTest(TestCase):
             ),
         )
         self.assertEqual(
-            [
-                [
-                    float,
-                ],
-            ],
+            list[list[float]],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(
                     items=InputArraySchema(items="float", type_="array"), type_="array"
@@ -774,11 +743,7 @@ class PydanticResolvingTest(TestCase):
             ),
         )
         self.assertEqual(
-            [
-                [
-                    float,
-                ],
-            ],
+            list[list[float]],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(
                     items=InputArraySchema(items="double", type_="array"), type_="array"
@@ -786,11 +751,7 @@ class PydanticResolvingTest(TestCase):
             ),
         )
         self.assertEqual(
-            [
-                [
-                    str,
-                ],
-            ],
+            list[list[str]],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(
                     items=InputArraySchema(items="string", type_="array"), type_="array"
@@ -798,11 +759,7 @@ class PydanticResolvingTest(TestCase):
             ),
         )
         self.assertEqual(
-            [
-                [
-                    File,
-                ],
-            ],
+            list[list[File]],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(
                     items=InputArraySchema(items="File", type_="array"), type_="array"
@@ -810,11 +767,7 @@ class PydanticResolvingTest(TestCase):
             ),
         )
         self.assertEqual(
-            [
-                [
-                    Directory,
-                ],
-            ],
+            list[list[Directory]],
             _resolve_to_pydantic_tuple(
                 InputArraySchema(
                     items=InputArraySchema(items="Directory", type_="array"),
@@ -858,88 +811,74 @@ class PydanticResolvingTest(TestCase):
         )
         self.assertEqual(
             (
-                [
-                    bool,
-                ],
+                list[bool],
                 [
                     False,
                 ],
             ),
             _resolve_to_pydantic_tuple(
-                InputArraySchema(items="boolean", type_="array"), arg_default=[False]
+                InputArraySchema(items="boolean", type_="array"), arg_default=[False,]
             ),
         )
         self.assertEqual(
             (
-                [
-                    int,
-                ],
+                list[int],
                 [
                     42,
                 ],
             ),
             _resolve_to_pydantic_tuple(
-                InputArraySchema(items="int", type_="array"), arg_default=[42]
+                InputArraySchema(items="int", type_="array"), arg_default=[42,]
             ),
         )
         self.assertEqual(
             (
-                [
-                    int,
-                ],
+                list[int],
                 [
                     42_000_000,
                 ],
             ),
             _resolve_to_pydantic_tuple(
-                InputArraySchema(items="long", type_="array"), arg_default=[42_000_000]
+                InputArraySchema(items="long", type_="array"), arg_default=[42_000_000,]
             ),
         )
         self.assertEqual(
             (
-                [
-                    float,
-                ],
+                list[float],
                 [
                     3.141,
                 ],
             ),
             _resolve_to_pydantic_tuple(
-                InputArraySchema(items="float", type_="array"), arg_default=[3.141]
+                InputArraySchema(items="float", type_="array"), arg_default=[3.141,]
             ),
         )
         self.assertEqual(
             (
-                [
-                    float,
-                ],
+                list[float],
                 [
                     3.141e20,
                 ],
             ),
             _resolve_to_pydantic_tuple(
-                InputArraySchema(items="double", type_="array"), arg_default=[3.141e20]
+                InputArraySchema(items="double", type_="array"), arg_default=[3.141e20,]
             ),
         )
         self.assertEqual(
             (
-                [
-                    str,
-                ],
+                list[str],
                 [
                     "Hello, World",
                 ],
             ),
             _resolve_to_pydantic_tuple(
                 InputArraySchema(items="string", type_="array"),
-                arg_default=["Hello, World"],
+                arg_default=["Hello, World",],
             ),
         )
         self.assertEqual(
             (
-                [
-                    File,
-                ],
+                list[File],
                 [
                     "https://fileserver.example.com/path/to/file.txt",
                 ],
@@ -949,14 +888,12 @@ class PydanticResolvingTest(TestCase):
                     items="File",
                     type_="array",
                 ),
-                arg_default=["https://fileserver.example.com/path/to/file.txt"],
+                arg_default=["https://fileserver.example.com/path/to/file.txt",],
             ),
         )
         self.assertEqual(
             (
-                [
-                    Directory,
-                ],
+                list[Directory],
                 [
                     "https://directoryerver.example.com/path/to/directory",
                 ],
@@ -966,16 +903,12 @@ class PydanticResolvingTest(TestCase):
                     items="Directory",
                     type_="array",
                 ),
-                arg_default=["https://directoryerver.example.com/path/to/directory"],
+                arg_default=["https://directoryerver.example.com/path/to/directory",],
             ),
         )
         self.assertEqual(
             (
-                [
-                    [
-                        bool,
-                    ],
-                ],
+                list[list[bool]],
                 [
                     [
                         False,
@@ -987,16 +920,12 @@ class PydanticResolvingTest(TestCase):
                     items=InputArraySchema(items="boolean", type_="array"),
                     type_="array",
                 ),
-                arg_default=[[False]],
+                arg_default=[[False,],],
             ),
         )
         self.assertEqual(
             (
-                [
-                    [
-                        int,
-                    ],
-                ],
+                list[list[int]],
                 [
                     [
                         42,
@@ -1008,16 +937,12 @@ class PydanticResolvingTest(TestCase):
                     items=InputArraySchema(items="int", type_="array"),
                     type_="array",
                 ),
-                arg_default=[[42]],
+                arg_default=[[42,],],
             ),
         )
         self.assertEqual(
             (
-                [
-                    [
-                        int,
-                    ],
-                ],
+                list[list[int]],
                 [
                     [
                         42_000_000,
@@ -1029,16 +954,12 @@ class PydanticResolvingTest(TestCase):
                     items=InputArraySchema(items="long", type_="array"),
                     type_="array",
                 ),
-                arg_default=[[42_000_000]],
+                arg_default=[[42_000_000,],],
             ),
         )
         self.assertEqual(
             (
-                [
-                    [
-                        float,
-                    ],
-                ],
+                list[list[float]],
                 [
                     [
                         3.141,
@@ -1049,16 +970,12 @@ class PydanticResolvingTest(TestCase):
                 InputArraySchema(
                     items=InputArraySchema(items="float", type_="array"), type_="array"
                 ),
-                arg_default=[[3.141]],
+                arg_default=[[3.141,],],
             ),
         )
         self.assertEqual(
             (
-                [
-                    [
-                        float,
-                    ],
-                ],
+                list[list[float]],
                 [
                     [
                         3.141e20,
@@ -1069,16 +986,12 @@ class PydanticResolvingTest(TestCase):
                 InputArraySchema(
                     items=InputArraySchema(items="double", type_="array"), type_="array"
                 ),
-                arg_default=[[3.141e20]],
+                arg_default=[[3.141e20,],],
             ),
         )
         self.assertEqual(
             (
-                [
-                    [
-                        str,
-                    ],
-                ],
+                list[list[str]],
                 [
                     [
                         "Hello, World",
@@ -1089,16 +1002,12 @@ class PydanticResolvingTest(TestCase):
                 InputArraySchema(
                     items=InputArraySchema(items="string", type_="array"), type_="array"
                 ),
-                arg_default=[["Hello, World"]],
+                arg_default=[["Hello, World",],],
             ),
         )
         self.assertEqual(
             (
-                [
-                    [
-                        File,
-                    ],
-                ],
+                list[list[File]],
                 [
                     [
                         "https://fileserver.example.com/path/to/file.txt",
@@ -1109,16 +1018,12 @@ class PydanticResolvingTest(TestCase):
                 InputArraySchema(
                     items=InputArraySchema(items="File", type_="array"), type_="array"
                 ),
-                arg_default=[["https://fileserver.example.com/path/to/file.txt"]],
+                arg_default=[["https://fileserver.example.com/path/to/file.txt",],],
             ),
         )
         self.assertEqual(
             (
-                [
-                    [
-                        Directory,
-                    ],
-                ],
+                list[list[Directory]],
                 [
                     [
                         "https://directoryerver.example.com/path/to/directory",
@@ -1130,6 +1035,6 @@ class PydanticResolvingTest(TestCase):
                     items=InputArraySchema(items="Directory", type_="array"),
                     type_="array",
                 ),
-                arg_default=[["https://directoryerver.example.com/path/to/directory"]],
+                arg_default=[["https://directoryerver.example.com/path/to/directory",],],
             ),
         )
