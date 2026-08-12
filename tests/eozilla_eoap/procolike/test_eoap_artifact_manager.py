@@ -99,6 +99,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["f"], dict)
 
             local_catalog_path = rebuild_process_arguments["f"]
             local_model = File(**local_catalog_path)
@@ -140,6 +141,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["f"], dict)
 
             local_catalog_path = rebuild_process_arguments["f"]
             local_model = File(**local_catalog_path)
@@ -181,6 +183,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["f"], dict)
 
             local_catalog_path = rebuild_process_arguments["f"]
             local_model = File(**local_catalog_path)
@@ -219,6 +222,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["f"], dict)
 
             local_catalog_path = rebuild_process_arguments["f"]
             local_model = File(**local_catalog_path)
@@ -260,6 +264,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["f"], dict)
 
             local_catalog_path = rebuild_process_arguments["f"]
             local_model = File(**local_catalog_path)
@@ -301,6 +306,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["f"], dict)
 
             local_catalog_path = rebuild_process_arguments["f"]
             local_model = File(**local_catalog_path)
@@ -344,6 +350,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["f"], dict)
 
             local_catalog_path = rebuild_process_arguments["f"]
             local_model = File(**local_catalog_path)
@@ -387,6 +394,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["f"], dict)
 
             local_catalog_path = rebuild_process_arguments["f"]
             local_model = File(**local_catalog_path)
@@ -430,6 +438,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["f"], dict)
 
             local_catalog_path = rebuild_process_arguments["f"]
             local_model = File(**local_catalog_path)
@@ -473,6 +482,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["f"], dict)
 
             local_catalog_path = rebuild_process_arguments["f"]
             local_model = File(**local_catalog_path)
@@ -517,6 +527,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["d"], dict)
 
             local_catalog_path = rebuild_process_arguments["d"]
             local_model = Directory(**local_catalog_path)
@@ -572,6 +583,7 @@ class LocalArtifactManagerTest(TestCase):
             rebuild_process_arguments = manager.rebuild_process_arguments()
             self.assertIsInstance(rebuild_process_arguments, dict)
             self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["d"], dict)
 
             local_catalog_path = rebuild_process_arguments["d"]
             local_model = Directory(**local_catalog_path)
@@ -625,14 +637,6 @@ class LocalArtifactManagerTest(TestCase):
                 NoStagingRequiredProcess(a=3), manager.process_instance_model
             )
 
-    # TODO: these should be asserted in stage-in tests as they actually
-    #       require stage-in
-    def test_rebuilding_replaces_file(self): ...
-
-    # TODO: these should be asserted in stage-in tests as they actually
-    #       require stage-in
-    def test_rebuilding_replaces_directory(self): ...
-
     def test_rebuilding_identity_without_staging(self):
         with TemporaryDirectory() as tdir:
             manager = LocalArtifactManager(
@@ -685,6 +689,7 @@ class LocalArtifactManagerTest(TestCase):
             patched_result = manager.stage_out(boilerplate_result)
 
             self.assertEqual(len(patched_result), 1)
+            self.assertIsInstance(patched_result["test_out"], str)
             self.assertEqual(boilerplate_result.keys(), patched_result.keys())
             self.assertTrue(Path(patched_result["test_out"]).exists())
             self.assertEqual(Path(patched_result["test_out"]).parent.name, "out")
@@ -721,6 +726,7 @@ class LocalArtifactManagerTest(TestCase):
             patched_result = manager.stage_out(boilerplate_result)
 
             self.assertEqual(len(patched_result), 1)
+            self.assertIsInstance(patched_result["test_out"], str)
             self.assertEqual(boilerplate_result.keys(), patched_result.keys())
             self.assertTrue(Path(patched_result["test_out"]).exists())
             self.assertEqual(Path(patched_result["test_out"]).parent.parent.name, "out")
@@ -753,6 +759,7 @@ class LocalArtifactManagerTest(TestCase):
             patched_result = manager.stage_out(boilerplate_result)
 
             self.assertEqual(len(patched_result), 1)
+            self.assertIsInstance(patched_result["test_out"], str)
             self.assertEqual(boilerplate_result.keys(), patched_result.keys())
 
             # check correct nesting/structure
