@@ -384,6 +384,8 @@ FLAT_TYPE_MAPPING_TO_PYTHON = {
     "float": float,
     "double": float,
     "string": str,
+    "File": File,
+    "Directory": Directory,
 }
 
 
@@ -411,19 +413,16 @@ def cwl_inputs_to_model_class(
 def _resolve_to_pydantic_tuple(
     arg_value, arg_default: Any = None, *, arg_from_array: bool = False
 ) -> Tuple[type, type] | type:
+    # NOTE: `cwltool` drops default values at T[][] and seemingly breaks
+    #       with deeper nested lists using the shorthand notation.
+    #       Entirely possible that I encounter the same problem because
+    #       I rely on cwl_util's parsing as well.
     if isinstance(arg_value, str):
-        if arg_value == "File":
-            # NOTE: dismissing `from_array` because defaults are attached to T not L<T> for files/directories
-            return (File, arg_default) if arg_default is not None else File
-        elif arg_value == "Directory":
-            # NOTE: dismissing `from_array` because defaults are attached to T not L<T> for files/directories
-            return (Directory, arg_default) if arg_default is not None else Directory
-        else:
-            return (
-                (FLAT_TYPE_MAPPING_TO_PYTHON[arg_value], arg_default)
-                if arg_default is not None and not arg_from_array
-                else FLAT_TYPE_MAPPING_TO_PYTHON[arg_value]
-            )
+        return (
+            (FLAT_TYPE_MAPPING_TO_PYTHON[arg_value], arg_default)
+            if arg_default is not None and not arg_from_array
+            else FLAT_TYPE_MAPPING_TO_PYTHON[arg_value]
+        )
     elif isinstance(arg_value, list):
         assert arg_value[0] == "null" or arg_value[1] == "null", (
             "Python list that doesn't represent an optional argument"
