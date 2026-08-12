@@ -1,164 +1,39 @@
-from tempfile import TemporaryDirectory
-from unittest import TestCase
 from pathlib import Path
 from shutil import rmtree
-import yaml
+from tempfile import TemporaryDirectory
+from unittest import TestCase
 from urllib.request import url2pathname
+
+import yaml
 
 from eozilla_eoap.procolike import EoapProcess, LocalEaopRegistry
 
-ECHO_WORKFLOW_DEFINITION = {
-    "$graph": [
-        {
-            "class": "Workflow",
-            "cwlVersion": "v1.2",
-            "label": "Echo User Input to File",
-            "doc": "The echo EOAP is a simple process that simply echos the user's input to a files and returns it. By registering the accompanying CWL workflow, the process will be available at `/processes/echo-workflow`.",
-            "id": "echo-workflow",
-            "inputs": {
-                "message": {
-                    "label": "message to echo",
-                    "doc": "some very length description of what this argument does",
-                    "type": "string",
-                    "default": "Hello World",
-                }
-            },
-            "outputs": {
-                "hello_out": {"outputSource": "echo/hello_out", "type": "File"}
-            },
-            "steps": {
-                "echo": {
-                    "in": {"message": "message"},
-                    "out": ["hello_out"],
-                    "run": "#echo-tool",
-                }
-            },
-        },
-        {
-            "baseCommand": ["echo"],
-            "class": "CommandLineTool",
-            "id": "#echo-tool",
-            "inputs": {"message": {"inputBinding": {"position": 1}, "type": "string"}},
-            "label": "Echo Tool",
-            "outputs": {
-                "hello_out": {"outputBinding": {"glob": "hello.txt"}, "type": "File"}
-            },
-            "requirements": {"DockerRequirement": {"dockerPull": "alpine:3.22"}},
-            "stdout": "hello.txt",
-        },
-    ],
-    "$namespaces": {"s": "https://schema.org/"},
-    "cwlVersion": "v1.2",
-    "s:version": "0.0.1",
-}
-
-ECHO_WORKFLOW_DEFINITION_HIGH_VERSION = {
-    "$graph": [
-        {
-            "class": "Workflow",
-            "cwlVersion": "v1.2",
-            "label": "Echo User Input to File",
-            "doc": "The echo EOAP is a simple process that simply echos the user's input to a files and returns it. By registering the accompanying CWL workflow, the process will be available at `/processes/echo-workflow`.",
-            "id": "echo-workflow",
-            "inputs": {
-                "message": {
-                    "label": "message to echo",
-                    "doc": "some very length description of what this argument does",
-                    "type": "string",
-                    "default": "Hello World",
-                }
-            },
-            "outputs": {
-                "hello_out": {"outputSource": "echo/hello_out", "type": "File"}
-            },
-            "steps": {
-                "echo": {
-                    "in": {"message": "message"},
-                    "out": ["hello_out"],
-                    "run": "#echo-tool",
-                }
-            },
-        },
-        {
-            "baseCommand": ["echo"],
-            "class": "CommandLineTool",
-            "id": "#echo-tool",
-            "inputs": {"message": {"inputBinding": {"position": 1}, "type": "string"}},
-            "label": "Echo Tool",
-            "outputs": {
-                "hello_out": {"outputBinding": {"glob": "hello.txt"}, "type": "File"}
-            },
-            "requirements": {"DockerRequirement": {"dockerPull": "alpine:3.22"}},
-            "stdout": "hello.txt",
-        },
-    ],
-    "$namespaces": {"s": "https://schema.org/"},
-    "cwlVersion": "v1.2",
-    "s:version": "100.0.0",
-}
-
-CAT_WORKFLOW_DEFINITION = {
-    "$graph": [
-        {
-            "class": "Workflow",
-            "cwlVersion": "v1.2",
-            "label": "Cat User Input from File to stdout",
-            "doc": "The cat EOAP is a simple process that cat the contents of a user-supplied file to stdout . By registering the accompanying CWL workflow, the process will be available at `/processes/cat-workflow`.",
-            "id": "cat-workflow",
-            "inputs": {
-                "file": {
-                    "label": "File to cat",
-                    "doc": "some very length description of what this argument does",
-                    "type": "File",
-                }
-            },
-            "outputs": {
-                "cat_out": {
-                    "outputSource": "cat/cat_out",
-                    "type": {"type": "array", "items": "string"},
-                }
-            },
-            "steps": {
-                "cat": {"in": {"file": "file"}, "out": ["cat_out"], "run": "#cat-tool"}
-            },
-        },
-        {
-            "baseCommand": ["cat"],
-            "class": "CommandLineTool",
-            "id": "#cat-tool",
-            "inputs": {"file": {"inputBinding": {"position": 1}, "type": "File"}},
-            "label": "Cat Tool",
-            "outputs": {
-                "cat_out": {
-                    "outputBinding": {
-                        "glob": "cat.txt",
-                        "loadContents": True,
-                        "outputEval": "$(self[0].contents.split('\\n'))",
-                    },
-                    "type": {"type": "array", "items": "string"},
-                }
-            },
-            "requirements": {
-                "DockerRequirement": {"dockerPull": "alpine:3.22"},
-                "InlineJavascriptRequirement": {},
-            },
-            "stdout": "cat.txt",
-        },
-    ],
-    "$namespaces": {"s": "https://schema.org/"},
-    "cwlVersion": "v1.2",
-    "s:version": "0.0.1",
-}
-
 
 class LocalEaopRegistryTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        static_resources_path: Path = Path(
+            Path(__file__).parent.parent, "resources", "cwls"
+        )
+
+        with open(Path(static_resources_path, "primes-workflow.cwl"), "rt") as f:
+            cls.primes_workflow_definition = yaml.safe_load(f)
+
+        with open(Path(static_resources_path, "echo-workflow.cwl"), "rt") as f:
+            cls.echo_workflow_definition = yaml.safe_load(f)
+
+        cls.echo_workflow_definition_high_version = cls.echo_workflow_definition.copy()
+        cls.echo_workflow_definition_high_version["s:version"] = "100.0.0"
+
     def setUp(self):
-        self.temporary_path = Path(TemporaryDirectory(prefix="pytest-fixture-", delete=False).name)
+        self.temporary_path = Path(
+            TemporaryDirectory(prefix="pytest-fixture-", delete=False).name
+        )
         self.registry = LocalEaopRegistry(self.temporary_path)
         # TODO: doesn't this somehow *invalidate* the test for the registry, if I access
         #       one of its methods while also testing the registry's functionality?
         self.registry.configure()
-        self.registry.create(ECHO_WORKFLOW_DEFINITION, None, ignore_existing=False)
+        self.registry.create(self.echo_workflow_definition, None, ignore_existing=False)
 
     def tearDown(self):
         rmtree(self.temporary_path)
@@ -202,21 +77,25 @@ class LocalEaopRegistryTest(TestCase):
         self.assertIsInstance(proc, EoapProcess)
 
     def test_process_creation(self):
-        proc = self.registry.create(CAT_WORKFLOW_DEFINITION, None, False)
+        proc = self.registry.create(self.primes_workflow_definition, None, False)
 
         self.assertIsInstance(proc, EoapProcess)
-        self.assertEqual(proc.description.id, "cat-workflow")
-        self.assertEqual(proc.entrypoint, "cat-workflow")
+        self.assertEqual(proc.description.id, "primes-workflow")
+        self.assertEqual(proc.entrypoint, "primes-workflow")
         self.assertEqual(len(self.registry), 2)
         self.assertEqual(len(list(self.temporary_path.glob("*.cwl"))), 2)
 
-    def test_process_creation_refuses_duplicate(self): ...
+    def test_process_creation_refuses_duplicate(self):
+        with self.assertRaises(KeyError):
+            self.registry.create(
+                self.echo_workflow_definition, None, ignore_existing=False
+            )
 
     def test_process_read(self):
         proc = self.registry.read("echo-workflow")
 
         self.assertIsInstance(proc, EoapProcess)
-    
+
     def test_process_read_missing(self):
         with self.assertRaises(KeyError):
             self.registry.read("missing")
@@ -232,7 +111,7 @@ class LocalEaopRegistryTest(TestCase):
         self.assertIsInstance(proc, EoapProcess)
 
     def test_process_replacement(self):
-        self.registry.update(ECHO_WORKFLOW_DEFINITION_HIGH_VERSION, None)
+        self.registry.update(self.echo_workflow_definition_high_version, None)
 
         proc = self.registry.get("echo-workflow")
 
@@ -240,7 +119,7 @@ class LocalEaopRegistryTest(TestCase):
             d = yaml.safe_load(f)
 
         self.assertIsInstance(proc, EoapProcess)
-        self.assertDictEqual(d, ECHO_WORKFLOW_DEFINITION_HIGH_VERSION)
+        self.assertDictEqual(d, self.echo_workflow_definition_high_version)
 
     def test_process_deletion(self):
         self.registry.delete("echo-workflow")
