@@ -450,7 +450,7 @@ def _resolve_to_pydantic_tuple(
                 list[t],
                 arg_default,
             )
-            if arg_default is not None
+            if arg_default is not None and not arg_from_array
             else list[t]
         )
     else:
