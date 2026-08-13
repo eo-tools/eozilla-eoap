@@ -554,6 +554,7 @@ class ProcessModelNoDefaults(BaseModel):
     directory_value: Directory
     array_int_value: list[int]
     array_file_value: list[File]
+    array_array_file_value: list[list[File]]
     enum_value: Literal["value-1", "value-2"]
 
 
@@ -576,11 +577,21 @@ class ProcessModelsWithDefaults(BaseModel):
             File(class_="File", path="https://example.com/some/remote/resource.txt"),
         ]
     )
+    array_array_file_value: list[list[File]] = Field(
+        [
+            [
+                File(
+                    class_="File", path="https://example.com/some/remote/resource.txt"
+                ),
+            ]
+        ]
+    )
     enum_value: Literal["value-1", "value-2"] = Field("value-1")
 
 
 class ModelClassGenerationTest(TestCase):
     def test_process_model_without_defaults(self):
+        self.maxDiff = None
         CwlInputsNoDefault = [
             WorkflowInputParameter(id="flag_value", type_="boolean"),
             WorkflowInputParameter(id="int_value", type_="int"),
@@ -598,6 +609,12 @@ class ModelClassGenerationTest(TestCase):
                 type_=InputArraySchema(type_="array", items="File"),
             ),
             WorkflowInputParameter(
+                id="array_array_file_value",
+                type_=InputArraySchema(
+                    type_="array", items=InputArraySchema(type_="array", items="File")
+                ),
+            ),
+            WorkflowInputParameter(
                 id="enum_value",
                 type_=InputEnumSchema(type_="enum", symbols=["value-1", "value-2"]),
             ),
@@ -605,19 +622,24 @@ class ModelClassGenerationTest(TestCase):
 
         DynamicProcessModel = cwl_inputs_to_model_class(CwlInputsNoDefault)
 
-        self.assertDictEqual(
-            ProcessModelNoDefaults.__pydantic_fields__,
-            DynamicProcessModel.__pydantic_fields__,
-        )
+        static_fields = ProcessModelNoDefaults.__pydantic_fields__
+        dynamic_fields = DynamicProcessModel.__pydantic_fields__
+
+        self.assertEqual(static_fields.keys(), dynamic_fields.keys())
+
+        # FieldInfo has no __eq__ or __hash__
+        for k in static_fields.keys():
+            with self.subTest(k=k):
+                self.assertDictEqual(
+                    static_fields[k].asdict(), dynamic_fields[k].asdict()
+                )
 
     def test_process_model_with_defaults(self):
         self.maxDiff = None
         CwlInputsWithDefault = [
             WorkflowInputParameter(id="flag_value", type_="boolean", default=True),
             WorkflowInputParameter(id="int_value", type_="int", default=42),
-            WorkflowInputParameter(
-                id="long_value", type_="long", default=42_000_000
-            ),
+            WorkflowInputParameter(id="long_value", type_="long", default=42_000_000),
             WorkflowInputParameter(id="float_value", type_="float", default=3.141),
             WorkflowInputParameter(
                 id="double_value", type_="double", default=3.141e308
@@ -648,6 +670,17 @@ class ModelClassGenerationTest(TestCase):
                 ],
             ),
             WorkflowInputParameter(
+                id="array_array_file_value",
+                type_=InputArraySchema(
+                    type_="array", items=InputArraySchema(type_="array", items="File")
+                ),
+                default=[
+                    [
+                        CwlFile(path="https://example.com/some/remote/resource.txt"),
+                    ]
+                ],
+            ),
+            WorkflowInputParameter(
                 id="enum_value",
                 type_=InputEnumSchema(type_="enum", symbols=["value-1", "value-2"]),
                 default="value-1",
@@ -656,10 +689,17 @@ class ModelClassGenerationTest(TestCase):
 
         DynamicProcessModel = cwl_inputs_to_model_class(CwlInputsWithDefault)
 
-        self.assertDictEqual(
-            ProcessModelsWithDefaults.__pydantic_fields__,
-            DynamicProcessModel.__pydantic_fields__,
-        )
+        static_fields = ProcessModelsWithDefaults.__pydantic_fields__
+        dynamic_fields = DynamicProcessModel.__pydantic_fields__
+
+        self.assertEqual(static_fields.keys(), dynamic_fields.keys())
+
+        # FieldInfo has no __eq__ or __hash__
+        for k in static_fields.keys():
+            with self.subTest(k=k):
+                self.assertDictEqual(
+                    static_fields[k].asdict(), dynamic_fields[k].asdict()
+                )
 
 
 class PydanticResolvingTest(TestCase):
@@ -854,18 +894,28 @@ class PydanticResolvingTest(TestCase):
 
     def test_file_with_default(self):
         self.assertEqual(
-            (File, "https://fileserver.example.com/path/to/file.txt"),
+            (File, File(location="https://fileserver.example.com/path/to/file.txt")),
             _resolve_to_pydantic_tuple(
-                "File", arg_default="https://fileserver.example.com/path/to/file.txt"
+                "File",
+                arg_default=CwlFile(
+                    location="https://fileserver.example.com/path/to/file.txt"
+                ),
             ),
         )
 
     def test_directory_with_default(self):
         self.assertEqual(
-            (Directory, "https://directoryerver.example.com/path/to/directory"),
+            (
+                Directory,
+                Directory(
+                    location="https://directoryerver.example.com/path/to/directory"
+                ),
+            ),
             _resolve_to_pydantic_tuple(
                 "Directory",
-                arg_default="https://directoryerver.example.com/path/to/directory",
+                arg_default=CwlDirectory(
+                    location="https://directoryerver.example.com/path/to/directory"
+                ),
             ),
         )
 
@@ -970,7 +1020,7 @@ class PydanticResolvingTest(TestCase):
             (
                 list[File],
                 [
-                    "https://fileserver.example.com/path/to/file.txt",
+                    File(location="https://fileserver.example.com/path/to/file.txt"),
                 ],
             ),
             _resolve_to_pydantic_tuple(
@@ -979,7 +1029,7 @@ class PydanticResolvingTest(TestCase):
                     type_="array",
                 ),
                 arg_default=[
-                    "https://fileserver.example.com/path/to/file.txt",
+                    CwlFile(location="https://fileserver.example.com/path/to/file.txt"),
                 ],
             ),
         )
@@ -989,7 +1039,9 @@ class PydanticResolvingTest(TestCase):
             (
                 list[Directory],
                 [
-                    "https://directoryerver.example.com/path/to/directory",
+                    Directory(
+                        location="https://directoryerver.example.com/path/to/directory"
+                    ),
                 ],
             ),
             _resolve_to_pydantic_tuple(
@@ -998,7 +1050,9 @@ class PydanticResolvingTest(TestCase):
                     type_="array",
                 ),
                 arg_default=[
-                    "https://directoryerver.example.com/path/to/directory",
+                    CwlDirectory(
+                        location="https://directoryerver.example.com/path/to/directory"
+                    ),
                 ],
             ),
         )
@@ -1144,7 +1198,9 @@ class PydanticResolvingTest(TestCase):
                 list[list[File]],
                 [
                     [
-                        "https://fileserver.example.com/path/to/file.txt",
+                        File(
+                            location="https://fileserver.example.com/path/to/file.txt"
+                        ),
                     ],
                 ],
             ),
@@ -1154,7 +1210,9 @@ class PydanticResolvingTest(TestCase):
                 ),
                 arg_default=[
                     [
-                        "https://fileserver.example.com/path/to/file.txt",
+                        CwlFile(
+                            location="https://fileserver.example.com/path/to/file.txt"
+                        ),
                     ],
                 ],
             ),
@@ -1166,7 +1224,9 @@ class PydanticResolvingTest(TestCase):
                 list[list[Directory]],
                 [
                     [
-                        "https://directoryerver.example.com/path/to/directory",
+                        Directory(
+                            location="https://directoryerver.example.com/path/to/directory"
+                        ),
                     ],
                 ],
             ),
@@ -1177,7 +1237,9 @@ class PydanticResolvingTest(TestCase):
                 ),
                 arg_default=[
                     [
-                        "https://directoryerver.example.com/path/to/directory",
+                        CwlDirectory(
+                            location="https://directoryerver.example.com/path/to/directory"
+                        ),
                     ],
                 ],
             ),

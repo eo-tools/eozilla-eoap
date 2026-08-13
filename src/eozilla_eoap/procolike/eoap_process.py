@@ -384,8 +384,6 @@ FLAT_TYPE_MAPPING_TO_PYTHON = {
     "float": float,
     "double": float,
     "string": str,
-    "File": File,
-    "Directory": Directory,
 }
 
 
@@ -410,6 +408,25 @@ def cwl_inputs_to_model_class(
     return model_class
 
 
+def _recursively_extract_special_defaults(arg_default):
+    if isinstance(arg_default, parser.File):
+        _vars = vars(arg_default)
+        # removing cwl_utils-internal fields
+        del _vars["extension_fields"]
+        del _vars["loadingOptions"]
+        return File(**_vars)
+    elif isinstance(arg_default, parser.Directory):
+        _vars = vars(arg_default)
+        # removing cwl_utils-internal fields
+        del _vars["extension_fields"]
+        del _vars["loadingOptions"]
+        return Directory(**_vars)
+    elif isinstance(arg_default, list):
+        return [_recursively_extract_special_defaults(i) for i in arg_default]
+    else:
+        return arg_default
+
+
 def _resolve_to_pydantic_tuple(
     arg_value, arg_default: Any = None, *, arg_from_array: bool = False
 ) -> Tuple[type, type] | type:
@@ -417,12 +434,29 @@ def _resolve_to_pydantic_tuple(
     #       with deeper nested lists using the shorthand notation.
     #       Entirely possible that I encounter the same problem because
     #       I rely on cwl_util's parsing as well.
+    # NOTE: My understanding of the `location` and `path` parameters is:
+    #       one the two must be given (ignoring that file contents can
+    #       be given inlined!) and the location takes precedence over
+    #       the path attribute
     if isinstance(arg_value, str):
-        return (
-            (FLAT_TYPE_MAPPING_TO_PYTHON[arg_value], arg_default)
-            if arg_default is not None and not arg_from_array
-            else FLAT_TYPE_MAPPING_TO_PYTHON[arg_value]
-        )
+        if arg_value == "File":
+            return (
+                (File, _recursively_extract_special_defaults(arg_default))
+                if arg_default is not None and not arg_from_array
+                else File
+            )
+        elif arg_value == "Directory":
+            return (
+                (Directory, _recursively_extract_special_defaults(arg_default))
+                if arg_default is not None and not arg_from_array
+                else Directory
+            )
+        else:
+            return (
+                (FLAT_TYPE_MAPPING_TO_PYTHON[arg_value], arg_default)
+                if arg_default is not None and not arg_from_array
+                else FLAT_TYPE_MAPPING_TO_PYTHON[arg_value]
+            )
     elif isinstance(arg_value, list):
         assert arg_value[0] == "null" or arg_value[1] == "null", (
             "Python list that doesn't represent an optional argument"
@@ -444,10 +478,16 @@ def _resolve_to_pydantic_tuple(
             arg_value.items, arg_default=arg_default, arg_from_array=True
         )
 
+        # on the top-most invocation, where the default argument is set,
+        # special types such as File and Directory must be handled specially
+        # to extract the `location` or `path` values used to set the default
+        # value; this means, we need to recurse twice on the same parameter:
+        # once for the type conversion and once for the default value
+        # conversion/extraction
         return (
             (
                 list[t],
-                arg_default,
+                _recursively_extract_special_defaults(arg_default),
             )
             if arg_default is not None and not arg_from_array
             else list[t]
