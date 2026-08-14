@@ -1,1 +1,1 @@
-../../../../example-eoaps/echo/echo-workflow.cwl
+../../../example-eoaps/echo/echo-workflow.cwl

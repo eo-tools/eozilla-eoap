@@ -1,1 +1,1 @@
-../../../../example-eoaps/primes/primes-workflow.cwl
+../../../example-eoaps/primes/primes-workflow.cwl
