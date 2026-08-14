@@ -207,7 +207,7 @@ class JobTest(TestCase):
 
         self.assertEqual(JobStatus.failed, job.job_info.status)
         self.assertIsNone(job.job_info.progress)
-        self.assertIsNone(job.job_info.message)
+        self.assertEqual(job.job_info.message, "")
 
     def test_run_failed(self):
         self.mock_runner.run.side_effect = JobCancelledException

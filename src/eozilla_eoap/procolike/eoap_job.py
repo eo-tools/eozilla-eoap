@@ -289,9 +289,6 @@ class Job(JobContext):
             #       enough.
             #       Same as with the OGC Process: This is only a representation of the
             #       outputs as far as I'm concerned as the actual output lives on disk.
-            # Maybe not alternatively but additionally: Can the process results
-            #       be modeled via the pydantic class describing the output? Not sure on
-            #       that one...
             job_results = self._get_job_results(results)
             self._maybe_notify_success(job_results)
             return job_results
