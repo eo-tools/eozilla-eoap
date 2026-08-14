@@ -138,7 +138,7 @@ class CallbackExecutor(SingleJobExecutor):
             Here, `original` refers to the original (super class) method.
 
             Args:
-                runtime_context (RuntimeContext): Runtime context for a single job (-step)
+                runtime_context (RuntiWormeContext): Runtime context for a single job (-step)
                     execution.
                 tmpdir_lock (Union[threading.Lock, None]): Lock to serialize access
                     to local temporary directory.
@@ -169,6 +169,7 @@ class CwlToolRunner(Runner):
         temporary_output_directory: Path,
         # Question: Does the line below invert the owenership relation?
         #           Though, the original
+        # TODO: Set NullJobContext on missing!
         context: Optional[Job] = None,
         **kwargs,
     ) -> Dict[str, Any]:
@@ -176,6 +177,8 @@ class CwlToolRunner(Runner):
         #       object was created
         out_dir: Path = Path(temporary_output_directory, "out")
         log_dir: Path = Path(temporary_output_directory, "log")
+
+        context = context or NullJobContext()
 
         with (
             CwltoolLogger(str(Path(log_dir, "run.log"))),
@@ -212,6 +215,8 @@ class CwlToolRunner(Runner):
                     raise JobCancelledException from e
                 else:
                     raise Exception from e
+            except JobCancelledException:
+                raise
             except Exception:
                 raise
 
