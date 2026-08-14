@@ -32,6 +32,7 @@ $graph:
 - class: CommandLineTool
   label: Sleep Tool
   id: '#primes-tool'
+  baseCommand: ['python', '/primes.py']
   inputs:
     maximum:
       inputBinding:
@@ -58,7 +59,7 @@ $graph:
 $namespaces:
   s: https://schema.org/
 cwlVersion: v1.2
-s:version: 0.0.1
+s:version: 0.0.2
 s:keywords:
 - Prime Numbers
 - Python

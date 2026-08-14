@@ -29,7 +29,7 @@ class AyncEoapAcceptanceTest(IsolatedAsyncioTestCase):
         )
 
         with open(Path(self.static_resources_path, "echo-workflow.cwl"), "rb") as f:
-            self.valid_dict = yaml.safe_load(self.valid_bytes)
+            self.valid_dict = yaml.safe_load(f)
 
         self.mock_request = AsyncMock(Request)
         self.mock_request.body = AsyncMock()

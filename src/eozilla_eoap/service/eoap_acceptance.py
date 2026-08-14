@@ -109,15 +109,16 @@ def check_eoap_requirement_08(cwl_object: list) -> bool:
         parser.cwl_v1_0.CommandLineTool
         | parser.cwl_v1_1.CommandLineTool
         | parser.cwl_v1_2.CommandLineTool
-    ] = filter(lambda x: x.class_ == "CommandLineTool", cwl_object)
+    ] = list(filter(lambda x: x.class_ == "CommandLineTool", cwl_object))
     all_have_ids = all(map(lambda x: x.id, clis))
     all_have_base_command = all(map(lambda x: x.baseCommand, clis))
     all_have_inputs = all(map(lambda x: x.inputs, clis))
-    all_have_requirements = all(map(lambda x: x.requirements, clis))
+    all_have_requirements = all(map(lambda x: x.requirements is not None, clis))
 
     all_have_docker_requirement = True
-    requirements: List[parser.ProcessRequirement] = map(lambda x: x.requriements, clis)
+    requirements: List[parser.ProcessRequirement] = map(lambda x: x.requirements, clis)
     for req in requirements:
+        if req is None: return False
         all_have_docker_requirement = all_have_docker_requirement and any(
             map(lambda x: isinstance(x, parser.DockerRequirement), req)
         )
@@ -134,14 +135,14 @@ def check_eoap_requirement_08(cwl_object: list) -> bool:
 def check_eoap_requirement_09(cwl_object: list) -> bool:
     workflows: List[
         parser.cwl_v1_0.Workflow | parser.cwl_v1_1.Workflow | parser.cwl_v1_2.Workflow
-    ] = filter(lambda x: x.class_ == "Workflow", cwl_object)
+    ] = list(filter(lambda x: x.class_ == "Workflow", cwl_object))
     return all(map(lambda x: x.id and x.label and x.doc, workflows))
 
 
 def check_eoap_requirement_10(cwl_object: list) -> bool:
     workflows: List[
         parser.cwl_v1_0.Workflow | parser.cwl_v1_1.Workflow | parser.cwl_v1_2.Workflow
-    ] = filter(lambda x: x.class_ == "Workflow", cwl_object)
+    ] = list(filter(lambda x: x.class_ == "Workflow", cwl_object))
 
     workflow_inputs: List[List[parser.WorkflowInputParameter]] = map(
         lambda x: x.inputs, workflows

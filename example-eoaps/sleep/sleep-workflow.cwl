@@ -34,6 +34,7 @@ $graph:
 - class: CommandLineTool
   label: Sleep Tool
   id: '#sleep-tool'
+  baseCommand: ['python', '/sleep.py']
   inputs:
     duration:
       inputBinding:
@@ -62,4 +63,4 @@ $graph:
 $namespaces:
   s: https://schema.org/
 cwlVersion: v1.2
-s:version: 0.0.1
+s:version: 0.0.2
