@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Tuple
+from typing import Any, Callable, Dict, List, Literal, Tuple, get_origin
 
 from cwl_utils import errors, parser
 from gavicore.models import (
@@ -16,6 +16,7 @@ from pydantic import (
     Field,
     FileUrl,
     create_model,
+    field_validator,
     model_validator,
 )
 
@@ -108,7 +109,7 @@ class EoapProcess(Process):
         namespaces: dict = cwl.get("$namespaces")
         schema_org_key: str = ""
 
-        if namespaces is None:
+        if namespaces is None or type(namespaces) is not dict:
             raise NamespaceNotFoundError("No namespaces specified")
 
         for k, v in namespaces.items():
@@ -292,6 +293,17 @@ class Directory(BaseModel):
         return data
 
 
+def _recursively_extract_special_defaults_to_ogc(arg_default):
+    if isinstance(arg_default, parser.File) or isinstance(
+        arg_default, parser.Directory
+    ):
+        return arg_default.location or arg_default.path
+    elif isinstance(arg_default, list):
+        return [_recursively_extract_special_defaults_to_ogc(i) for i in arg_default]
+    else:
+        return arg_default
+
+
 def _resolve_ogc_schema_from_cwl_utils(
     cwl_type,
     *,
@@ -299,6 +311,7 @@ def _resolve_ogc_schema_from_cwl_utils(
     format: str | None = None,
     nullable: bool = False,
 ) -> Tuple[bool, bool, Schema]:
+    nullable = nullable or (default is not None)  # don't trust user input
     if isinstance(cwl_type, str):
         if cwl_type == "File":
             return (
@@ -307,7 +320,7 @@ def _resolve_ogc_schema_from_cwl_utils(
                 Schema(
                     type="string",
                     nullable=nullable,
-                    default=default,
+                    default=_recursively_extract_special_defaults_to_ogc(default),
                     contentMediaType=format,
                     format="url",
                 ),
@@ -319,7 +332,7 @@ def _resolve_ogc_schema_from_cwl_utils(
                 Schema(
                     type="string",
                     nullable=nullable,
-                    default=default,
+                    default=_recursively_extract_special_defaults_to_ogc(default),
                     contentMediaType=format,
                     format="url",
                 ),
@@ -364,14 +377,20 @@ def _resolve_ogc_schema_from_cwl_utils(
     ):
         _, _, s = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.items,
-            nullable=nullable,
-            default=default,
+            nullable=False,
+            default=None,
             format=format,
         )
         return (
             nullable,
             True,
-            Schema(type="array", minItems=0 if nullable else 1, items=s),
+            Schema(
+                type="array",
+                minItems=1,
+                items=s,
+                default=_recursively_extract_special_defaults_to_ogc(default),
+                nullable=nullable,
+            ),
         )
     else:
         raise NotImplementedError(f"Schema conversion not implemented for {cwl_type!r}")
@@ -387,10 +406,20 @@ FLAT_TYPE_MAPPING_TO_PYTHON = {
 }
 
 
+def at_least_one_element_in_list(v: Any) -> Any:
+    # OGC defines lists as containers with at least one element
+    if not isinstance(v, list):
+        return v
+    if len(v) == 0:
+        raise AssertionError
+    return [at_least_one_element_in_list(item) for item in v]
+
+
 def cwl_inputs_to_model_class(
     inputs: list[parser.WorkflowInputParameter],
 ) -> type[BaseModel]:
     arguments: Dict[str, Any] = {}
+    validators: Dict[str, Callable] = {}
 
     if isinstance(inputs, list):
         for input_ in inputs:
@@ -398,17 +427,26 @@ def cwl_inputs_to_model_class(
             t_ = input_.type_
             d_ = input_.default
 
-            arguments[n_] = _resolve_to_pydantic_tuple(t_, d_)
+            resolved = _resolve_to_pydantic_tuple(t_, d_)
+            arguments[n_] = resolved
+
+            is_tuple = type(resolved) is tuple
+            python_type_definition = arguments[n_][0] if is_tuple else arguments[n_]
+            if get_origin(python_type_definition) is list:
+                validators[n_ + "_validator"] = field_validator(n_)(
+                    at_least_one_element_in_list
+                )
 
     model_class: type[BaseModel] = create_model(
         "ProcessInputs",
         **arguments,
+        __validators__=validators,
     )
 
     return model_class
 
 
-def _recursively_extract_special_defaults(arg_default):
+def _recursively_extract_special_defaults_to_pydantic(arg_default):
     if isinstance(arg_default, parser.File):
         _vars = vars(arg_default)
         # removing cwl_utils-internal fields
@@ -422,7 +460,9 @@ def _recursively_extract_special_defaults(arg_default):
         del _vars["loadingOptions"]
         return Directory(**_vars)
     elif isinstance(arg_default, list):
-        return [_recursively_extract_special_defaults(i) for i in arg_default]
+        return [
+            _recursively_extract_special_defaults_to_pydantic(i) for i in arg_default
+        ]
     else:
         return arg_default
 
@@ -441,13 +481,16 @@ def _resolve_to_pydantic_tuple(
     if isinstance(arg_value, str):
         if arg_value == "File":
             return (
-                (File, _recursively_extract_special_defaults(arg_default))
+                (File, _recursively_extract_special_defaults_to_pydantic(arg_default))
                 if arg_default is not None and not arg_from_array
                 else File
             )
         elif arg_value == "Directory":
             return (
-                (Directory, _recursively_extract_special_defaults(arg_default))
+                (
+                    Directory,
+                    _recursively_extract_special_defaults_to_pydantic(arg_default),
+                )
                 if arg_default is not None and not arg_from_array
                 else Directory
             )
@@ -464,9 +507,16 @@ def _resolve_to_pydantic_tuple(
 
         content = arg_value[0] if arg_value[1] == "null" else arg_value[1]
 
-        return _resolve_to_pydantic_tuple(
+        resolved_opt_value = _resolve_to_pydantic_tuple(
             content, arg_default=arg_default, arg_from_array=False
         )
+
+        if type(resolved_opt_value) is type:
+            # something like a: int | None = None
+            return (resolved_opt_value | None, None)
+        else:
+            # someting like a: int | None = 1
+            return (resolved_opt_value[0] | None, resolved_opt_value[1])
     elif isinstance(arg_value, parser.InputEnumSchema):
         return (
             (Literal[*arg_value.symbols], arg_default)
@@ -487,7 +537,7 @@ def _resolve_to_pydantic_tuple(
         return (
             (
                 list[t],
-                _recursively_extract_special_defaults(arg_default),
+                _recursively_extract_special_defaults_to_pydantic(arg_default),
             )
             if arg_default is not None and not arg_from_array
             else list[t]

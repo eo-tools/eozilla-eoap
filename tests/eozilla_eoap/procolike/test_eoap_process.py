@@ -34,42 +34,54 @@ SIMPLE_TYPE_MAPPINGS = {
     # null -> this has no mapping as it's used as the "optional" marker in CWL
     "boolean": {
         "ogc_type": "boolean",
-        "example_value": True,
+        "default_in": True,
+        "default_out": True,
         "format": None,
     },
     "int": {
         "ogc_type": "integer",
-        "example_value": 2147483647,
+        "default_in": 2147483647,
+        "default_out": 2147483647,
         "format": None,
     },
     "long": {
         "ogc_type": "integer",
-        "example_value": 9223372036854775807,
+        "default_in": 9223372036854775807,
+        "default_out": 9223372036854775807,
         "format": None,
     },
     "float": {
         "ogc_type": "number",
-        "example_value": 3.402823e38,
+        "default_in": 3.402823e38,
+        "default_out": 3.402823e38,
         "format": None,
     },
     "double": {
         "ogc_type": "number",
-        "example_value": 1.797693e308,
+        "default_in": 1.797693e20,
+        "default_out": 1.797693e20,
         "format": None,
     },
     "string": {
         "ogc_type": "string",
-        "example_value": "hello, world",
+        "default_in": "hello, world",
+        "default_out": "hello, world",
         "format": None,
     },
     "File": {
         "ogc_type": "string",
-        "example_value": "https://files.example.com/remote/path/to/some/file.txt",
+        "default_in": CwlFile(
+            location="https://files.example.com/remote/path/to/some/file.txt"
+        ),
+        "default_out": "https://files.example.com/remote/path/to/some/file.txt",
         "format": "url",
     },
     "Directory": {
         "ogc_type": "string",
-        "example_value": "https://catalogs.example.com/remote/path/to/some/STAC/item/",
+        "default_in": CwlDirectory(
+            location="https://catalogs.example.com/remote/path/to/some/STAC/item/"
+        ),
+        "default_out": "https://catalogs.example.com/remote/path/to/some/STAC/item/",
         "format": "url",
     },
 }
@@ -107,8 +119,6 @@ class ModelsTest(TestCase):
 
 class OgcSchemaResolvingTest(TestCase):
     def test_input_cwltypes_without_default(self):
-        self.maxDiff = None
-
         for key, value in SIMPLE_TYPE_MAPPINGS.items():
             with self.subTest(key=key, vlaue=value):
                 cwl_type = WorkflowInputParameter(id="some-id", type_=key)
@@ -117,15 +127,13 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
-                        default=cwl_type.default,
                         format=cwl_type.format,
-                        nullable=False,
+                        nullable=cwl_type.default is not None,
                     )
                 )
 
                 expected_schema = Schema(
                     type=value.get("ogc_type"),
-                    default=cwl_type.default,
                     contentMediaType=cwl_type.format,
                     nullable=False,
                     format=value.get("format"),
@@ -139,12 +147,10 @@ class OgcSchemaResolvingTest(TestCase):
                 self.assertFalse(unbounded)
 
     def test_input_cwltypes_with_default(self):
-        self.maxDiff = None
-
         for key, value in SIMPLE_TYPE_MAPPINGS.items():
             with self.subTest(key=key, vlaue=value):
                 cwl_type = WorkflowInputParameter(
-                    id="some-id", type_=key, default=value.get("example_value")
+                    id="some-id", type_=key, default=value.get("default_in")
                 )
 
                 # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
@@ -153,15 +159,15 @@ class OgcSchemaResolvingTest(TestCase):
                         cwl_type.type_,
                         default=cwl_type.default,
                         format=cwl_type.format,
-                        nullable=False,
+                        nullable=cwl_type.default is not None,
                     )
                 )
 
                 expected_schema = Schema(
                     type=value.get("ogc_type"),
-                    default=cwl_type.default,
+                    default=value.get("default_out"),
                     contentMediaType=cwl_type.format,
-                    nullable=False,
+                    nullable=True,
                     format=value.get("format"),
                 )
 
@@ -173,9 +179,6 @@ class OgcSchemaResolvingTest(TestCase):
                 self.assertFalse(unbounded)
 
     def test_input_optional_cwltypes_without_default(self):
-        self.fail("discussion regarding optional values and presence of defaults")
-        self.maxDiff = None
-
         for key, value in SIMPLE_TYPE_MAPPINGS.items():
             with self.subTest(key=key, vlaue=value):
                 cwl_type = WorkflowInputParameter(id="some-id", type_=["null", key])
@@ -184,15 +187,13 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
-                        default=cwl_type.default,
                         format=cwl_type.format,
-                        nullable=True,
+                        nullable=cwl_type.default is not None,
                     )
                 )
 
                 expected_schema = Schema(
                     type=value.get("ogc_type"),
-                    default=cwl_type.default,
                     contentMediaType=cwl_type.format,
                     nullable=True,
                     format=value.get("format"),
@@ -206,9 +207,6 @@ class OgcSchemaResolvingTest(TestCase):
                 self.assertFalse(unbounded)
 
     def test_input_optional_cwltypes_order_invariant(self):
-        # FIXME: discussion regarding optional values and presence of defaults
-        self.maxDiff = None
-
         for key, value in SIMPLE_TYPE_MAPPINGS.items():
             with self.subTest(key=key, vlaue=value):
                 cwl_type_1 = WorkflowInputParameter(id="some-id", type_=["null", key])
@@ -218,17 +216,15 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable_1, unbounded_1, computed_schema_1 = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type_1.type_,
-                        default=cwl_type_1.default,
                         format=cwl_type_1.format,
-                        nullable=True,
+                        nullable=cwl_type_1.default is not None,
                     )
                 )
                 nullable_2, unbounded_2, computed_schema_2 = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type_2.type_,
-                        default=cwl_type_2.default,
                         format=cwl_type_2.format,
-                        nullable=True,
+                        nullable=cwl_type_2.default is not None,
                     )
                 )
 
@@ -240,9 +236,6 @@ class OgcSchemaResolvingTest(TestCase):
                 self.assertFalse(unbounded_1)
                 self.assertEqual(nullable_1, nullable_2)
                 self.assertEqual(unbounded_1, unbounded_2)
-
-    def test_input_nullable_cwltypes_must_have_defaults(self):
-        self.fail("`test_input_nullable_cwltypes_must_have_defaults` not implemented")
 
     def test_input_array_of_cwltypes_without_default(self):
         self.maxDiff = None
@@ -257,15 +250,13 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
-                        default=cwl_type.default,
                         format=cwl_type.format,
-                        nullable=False,
+                        nullable=cwl_type.default is not None,
                     )
                 )
 
                 expected_schema = Schema(
                     type="array",
-                    default=cwl_type.default,  # FIXME: for File and Directory, the default is attached to the items, not the array!
                     nullable=False,
                     minItems=1,
                     items=Schema(
@@ -290,7 +281,7 @@ class OgcSchemaResolvingTest(TestCase):
                 cwl_type = WorkflowInputParameter(
                     id="some-id",
                     type_=InputArraySchema(type_="array", items=key),
-                    default=value.get("example_value"),
+                    default=[value.get("default_in")],
                 )
 
                 # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
@@ -299,14 +290,14 @@ class OgcSchemaResolvingTest(TestCase):
                         cwl_type.type_,
                         default=cwl_type.default,
                         format=cwl_type.format,
-                        nullable=False,
+                        nullable=cwl_type.default is not None,
                     )
                 )
 
                 expected_schema = Schema(
                     type="array",
-                    default=cwl_type.default,  # FIXME: for File and Directory, the default is attached to the items, not the array!
-                    nullable=False,
+                    default=[value.get("default_out")],
+                    nullable=True,
                     minItems=1,
                     items=Schema(
                         type=value.get("ogc_type"),
@@ -319,7 +310,79 @@ class OgcSchemaResolvingTest(TestCase):
                 computed_dump = computed_schema.model_dump()
 
                 self.assertDictEqual(expected_dump, computed_dump)
-                self.assertFalse(nullable)
+                self.assertTrue(nullable)
+                self.assertTrue(unbounded)
+
+    def test_input_optional_array_of_cwltypes_without_default(self):
+        for key, value in SIMPLE_TYPE_MAPPINGS.items():
+            with self.subTest(key=key, vlaue=value):
+                cwl_type = WorkflowInputParameter(
+                    id="some-id",
+                    type_=["null", InputArraySchema(type_="array", items=key)],
+                )
+
+                nullable, unbounded, computed_schema = (
+                    _resolve_ogc_schema_from_cwl_utils(
+                        cwl_type.type_,
+                        default=cwl_type.default,
+                        format=cwl_type.format,
+                        nullable=cwl_type.default is not None,
+                    )
+                )
+
+                expected_schema = Schema(
+                    type="array",
+                    nullable=True,
+                    minItems=1,
+                    items=Schema(
+                        type=value.get("ogc_type"),
+                        contentMediaType=cwl_type.format,
+                        format=value.get("format"),
+                    ),
+                )
+
+                expected_dump = expected_schema.model_dump()
+                computed_dump = computed_schema.model_dump()
+
+                self.assertDictEqual(expected_dump, computed_dump)
+                self.assertTrue(nullable)
+                self.assertTrue(unbounded)
+
+    def test_input_optional_array_of_cwltypes_with_default(self):
+        for key, value in SIMPLE_TYPE_MAPPINGS.items():
+            with self.subTest(key=key, vlaue=value):
+                cwl_type = WorkflowInputParameter(
+                    id="some-id",
+                    type_=["null", InputArraySchema(type_="array", items=key)],
+                    default=[value.get("default_in")],
+                )
+
+                nullable, unbounded, computed_schema = (
+                    _resolve_ogc_schema_from_cwl_utils(
+                        cwl_type.type_,
+                        default=cwl_type.default,
+                        format=cwl_type.format,
+                        nullable=cwl_type.default is not None,
+                    )
+                )
+
+                expected_schema = Schema(
+                    type="array",
+                    nullable=True,
+                    minItems=1,
+                    items=Schema(
+                        type=value.get("ogc_type"),
+                        contentMediaType=cwl_type.format,
+                        format=value.get("format"),
+                    ),
+                    default=[value.get("default_out")],
+                )
+
+                expected_dump = expected_schema.model_dump()
+                computed_dump = computed_schema.model_dump()
+
+                self.assertDictEqual(expected_dump, computed_dump)
+                self.assertTrue(nullable)
                 self.assertTrue(unbounded)
 
     def test_input_array_of_enums_without_defaults(self):
@@ -334,14 +397,12 @@ class OgcSchemaResolvingTest(TestCase):
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
         nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.type_,
-            default=cwl_type.default,
             format=cwl_type.format,
-            nullable=False,
+            nullable=cwl_type.default is not None,
         )
 
         expected_schema = Schema(
             type="array",
-            default=cwl_type.default,
             nullable=False,
             minItems=1,
             items=Schema(
@@ -365,7 +426,7 @@ class OgcSchemaResolvingTest(TestCase):
                 type_="array",
                 items=InputEnumSchema(type_="enum", symbols=["sym-a", "sym-b"]),
             ),
-            default="sym-a",
+            default=["sym-a"],
         )
 
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
@@ -373,13 +434,13 @@ class OgcSchemaResolvingTest(TestCase):
             cwl_type.type_,
             default=cwl_type.default,
             format=cwl_type.format,
-            nullable=False,
+            nullable=cwl_type.default is not None,
         )
 
         expected_schema = Schema(
             type="array",
-            default=cwl_type.default,
-            nullable=False,
+            default=["sym-a"],
+            nullable=True,
             minItems=1,
             items=Schema(
                 type="string",
@@ -392,7 +453,84 @@ class OgcSchemaResolvingTest(TestCase):
         computed_dump = computed_schema.model_dump()
 
         self.assertDictEqual(expected_dump, computed_dump)
-        self.assertFalse(nullable)
+        self.assertTrue(nullable)
+        self.assertTrue(unbounded)
+
+    def test_input_optional_array_of_enums_without_default(self):
+        cwl_type = WorkflowInputParameter(
+            id="some-id",
+            type_=[
+                "null",
+                InputArraySchema(
+                    type_="array",
+                    items=InputEnumSchema(type_="enum", symbols=["sym-a", "sym-b"]),
+                ),
+            ],
+        )
+
+        # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+        nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
+            cwl_type.type_,
+            format=cwl_type.format,
+            nullable=cwl_type.default is not None,
+        )
+
+        expected_schema = Schema(
+            type="array",
+            nullable=True,
+            minItems=1,
+            items=Schema(
+                type="string",
+                format=cwl_type.format,
+                enum=["sym-a", "sym-b"],
+            ),
+        )
+
+        expected_dump = expected_schema.model_dump()
+        computed_dump = computed_schema.model_dump()
+
+        self.assertDictEqual(expected_dump, computed_dump)
+        self.assertTrue(nullable)
+        self.assertTrue(unbounded)
+
+    def test_input_optional_array_of_enums_with_default(self):
+        cwl_type = WorkflowInputParameter(
+            id="some-id",
+            type_=[
+                "null",
+                InputArraySchema(
+                    type_="array",
+                    items=InputEnumSchema(type_="enum", symbols=["sym-a", "sym-b"]),
+                ),
+            ],
+            default=["sym-a"],
+        )
+
+        # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+        nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
+            cwl_type.type_,
+            default=cwl_type.default,
+            format=cwl_type.format,
+            nullable=cwl_type.default is not None,
+        )
+
+        expected_schema = Schema(
+            type="array",
+            default=["sym-a"],
+            nullable=True,
+            minItems=1,
+            items=Schema(
+                type="string",
+                format=cwl_type.format,
+                enum=["sym-a", "sym-b"],
+            ),
+        )
+
+        expected_dump = expected_schema.model_dump()
+        computed_dump = computed_schema.model_dump()
+
+        self.assertDictEqual(expected_dump, computed_dump)
+        self.assertTrue(nullable)
         self.assertTrue(unbounded)
 
     def test_input_enum_without_default(self):
@@ -406,13 +544,13 @@ class OgcSchemaResolvingTest(TestCase):
             cwl_type.type_,
             default=cwl_type.default,
             format=cwl_type.format,
-            nullable=False,
+            nullable=cwl_type.default is not None,
         )
 
         expected_schema = Schema(
             type="string",
             default=cwl_type.default,
-            nullable=False,
+            nullable=cwl_type.default is not None,
             enum=["sym-a", "sym-b"],
         )
 
@@ -435,13 +573,13 @@ class OgcSchemaResolvingTest(TestCase):
             cwl_type.type_,
             default=cwl_type.default,
             format=cwl_type.format,
-            nullable=False,
+            nullable=cwl_type.default is not None,
         )
 
         expected_schema = Schema(
             type="string",
             default=cwl_type.default,
-            nullable=False,
+            nullable=cwl_type.default is not None,
             enum=["sym-a", "sym-b"],
         )
 
@@ -449,7 +587,7 @@ class OgcSchemaResolvingTest(TestCase):
         computed_dump = computed_schema.model_dump()
 
         self.assertDictEqual(expected_dump, computed_dump)
-        self.assertFalse(nullable)
+        self.assertTrue(nullable)
         self.assertFalse(unbounded)
 
     def test_input_record_throws_error(self):
@@ -464,7 +602,7 @@ class OgcSchemaResolvingTest(TestCase):
                 cwl_type.type_,
                 default=cwl_type.default,
                 format=cwl_type.format,
-                nullable=False,
+                nullable=cwl_type.default is not None,
             )
 
     def test_input_array_of_records_throws_error(self):
@@ -481,7 +619,7 @@ class OgcSchemaResolvingTest(TestCase):
                 cwl_type.type_,
                 default=cwl_type.default,
                 format=cwl_type.format,
-                nullable=False,
+                nullable=cwl_type.default is not None,
             )
 
     def test_input_record_of_records_throws_error(self):
@@ -496,47 +634,323 @@ class OgcSchemaResolvingTest(TestCase):
                 cwl_type.type_,
                 default=cwl_type.default,
                 format=cwl_type.format,
-                nullable=False,
+                nullable=cwl_type.default is not None,
             )
 
-    # Inputs
-    ## test plain CWLTypes: null, boolean, int, long, float, double, string, File, Directory ✔
-    ##   -> testing of forwarding of format field should also be tested
-    ## test optional plain CWLTypes: boolean, int, long, float, double, string, File, Directory ✔
-    ##   -> should also include that it doesn't matter whether it's ['null', T] or [T, 'null'] ✔
-    ##   -> do I test whether optional 'null' fails or succeeds?
-    ##   -> nullable must have default
-    ## test array of plain CWLTypes: null, boolean, int, long, float, double, string, File, Directory ✔
-    ## test input array of plain CWLTypes, enums
-    ## test optional array of plain CWLTypes, enums
-    ## test nested array
-    ## test input enum
-    ## test optional enum
-    ## test everything above with default values!
+    def test_output_cwltypes(self):
+        for key, value in SIMPLE_TYPE_MAPPINGS.items():
+            with self.subTest(key=key, vlaue=value):
+                cwl_type = WorkflowOutputParameter(id="some-id", type_=key)
 
-    ## test unsupported record ✔
-    ## test optional unsupported record ✔
-    ## test nested unsupported record ✔
+                # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+                nullable, unbounded, computed_schema = (
+                    _resolve_ogc_schema_from_cwl_utils(
+                        cwl_type.type_,
+                        format=cwl_type.format,
+                    )
+                )
 
-    # Outputs
-    ## test plain CWLTypes: null, boolean, int, long, float, double, string, File, Directory
-    ## test optional plain CWLTypes: null, boolean, int, long, float, double, string, File, Directory
-    ##   -> should also include that it doesn't matter whether it's ['null', T] or [T, 'null']
-    ##   -> do I test whether optional 'null' fails or succeeds?
-    ## test array of plain CWLTypes: null, boolean, int, long, float, double, string, File, Directory
-    ## test input array of plain CWLTypes, enums
-    ## test optional array of plain CWLTypes, enums
-    ## test nested array
-    ## test input enum
-    ## test optional enum
-    ## test nested enum <- is this even possible? I don't think so
-    ## test everything above with default values!
+                expected_schema = Schema(
+                    type=value.get("ogc_type"),
+                    contentMediaType=cwl_type.format,
+                    nullable=False,
+                    format=value.get("format"),
+                )
 
-    ## test unsupported record
-    ## test optional unsupported record
-    ## test nested unsupported record <- is this even possible?
+                expected_dump = expected_schema.model_dump()
+                computed_dump = computed_schema.model_dump()
 
-    # NOTE: Fix tests for input paramter and then simply copy, replace, paste for output stuff; probably easier than fixing things in two places
+                self.assertDictEqual(expected_dump, computed_dump)
+                self.assertFalse(nullable)
+                self.assertFalse(unbounded)
+
+    def test_output_optional_cwltypes(self):
+        for key, value in SIMPLE_TYPE_MAPPINGS.items():
+            with self.subTest(key=key, vlaue=value):
+                cwl_type = WorkflowOutputParameter(id="some-id", type_=["null", key])
+
+                # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+                nullable, unbounded, computed_schema = (
+                    _resolve_ogc_schema_from_cwl_utils(
+                        cwl_type.type_,
+                        format=cwl_type.format,
+                    )
+                )
+
+                expected_schema = Schema(
+                    type=value.get("ogc_type"),
+                    contentMediaType=cwl_type.format,
+                    nullable=True,
+                    format=value.get("format"),
+                )
+
+                expected_dump = expected_schema.model_dump()
+                computed_dump = computed_schema.model_dump()
+
+                self.assertDictEqual(expected_dump, computed_dump)
+                self.assertTrue(nullable)
+                self.assertFalse(unbounded)
+
+    def test_output_optional_cwltypes_order_invariant(self):
+        for key, value in SIMPLE_TYPE_MAPPINGS.items():
+            with self.subTest(key=key, vlaue=value):
+                cwl_type_1 = WorkflowOutputParameter(id="some-id", type_=["null", key])
+                cwl_type_2 = WorkflowOutputParameter(id="some-id", type_=[key, "null"])
+
+                # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+                nullable_1, unbounded_1, computed_schema_1 = (
+                    _resolve_ogc_schema_from_cwl_utils(
+                        cwl_type_1.type_,
+                        format=cwl_type_1.format,
+                    )
+                )
+                nullable_2, unbounded_2, computed_schema_2 = (
+                    _resolve_ogc_schema_from_cwl_utils(
+                        cwl_type_2.type_,
+                        format=cwl_type_2.format,
+                        nullable=True,
+                    )
+                )
+
+                computed_dump_1 = computed_schema_1.model_dump()
+                computed_dump_2 = computed_schema_2.model_dump()
+
+                self.assertDictEqual(computed_dump_1, computed_dump_2)
+                self.assertTrue(nullable_1)
+                self.assertFalse(unbounded_1)
+                self.assertEqual(nullable_1, nullable_2)
+                self.assertEqual(unbounded_1, unbounded_2)
+
+    def test_output_array_of_cwltypes(self):
+        self.maxDiff = None
+
+        for key, value in SIMPLE_TYPE_MAPPINGS.items():
+            with self.subTest(key=key, vlaue=value):
+                cwl_type = WorkflowOutputParameter(
+                    id="some-id", type_=OutputArraySchema(type_="array", items=key)
+                )
+
+                # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+                nullable, unbounded, computed_schema = (
+                    _resolve_ogc_schema_from_cwl_utils(
+                        cwl_type.type_,
+                        format=cwl_type.format,
+                    )
+                )
+
+                expected_schema = Schema(
+                    type="array",
+                    nullable=False,
+                    minItems=1,
+                    items=Schema(
+                        type=value.get("ogc_type"),
+                        contentMediaType=cwl_type.format,
+                        format=value.get("format"),
+                    ),
+                )
+
+                expected_dump = expected_schema.model_dump()
+                computed_dump = computed_schema.model_dump()
+
+                self.assertDictEqual(expected_dump, computed_dump)
+                self.assertFalse(nullable)
+                self.assertTrue(unbounded)
+
+    def test_output_optional_array_of_cwltypes(self):
+        for key, value in SIMPLE_TYPE_MAPPINGS.items():
+            with self.subTest(key=key, vlaue=value):
+                cwl_type = WorkflowOutputParameter(
+                    id="some-id",
+                    type_=["null", OutputArraySchema(type_="array", items=key)],
+                )
+
+                nullable, unbounded, computed_schema = (
+                    _resolve_ogc_schema_from_cwl_utils(
+                        cwl_type.type_,
+                        format=cwl_type.format,
+                    )
+                )
+
+                expected_schema = Schema(
+                    type="array",
+                    nullable=True,
+                    minItems=1,
+                    items=Schema(
+                        type=value.get("ogc_type"),
+                        contentMediaType=cwl_type.format,
+                        format=value.get("format"),
+                    ),
+                )
+
+                expected_dump = expected_schema.model_dump()
+                computed_dump = computed_schema.model_dump()
+
+                self.assertDictEqual(expected_dump, computed_dump)
+                self.assertTrue(nullable)
+                self.assertTrue(unbounded)
+
+    def test_output_array_of_enums(self):
+        cwl_type = WorkflowOutputParameter(
+            id="some-id",
+            type_=OutputArraySchema(
+                type_="array",
+                items=OutputEnumSchema(type_="enum", symbols=["sym-a", "sym-b"]),
+            ),
+        )
+
+        # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+        nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
+            cwl_type.type_,
+            format=cwl_type.format,
+        )
+
+        expected_schema = Schema(
+            type="array",
+            nullable=False,
+            minItems=1,
+            items=Schema(
+                type="string",
+                format=cwl_type.format,
+                enum=["sym-a", "sym-b"],
+            ),
+        )
+
+        expected_dump = expected_schema.model_dump()
+        computed_dump = computed_schema.model_dump()
+
+        self.assertDictEqual(expected_dump, computed_dump)
+        self.assertFalse(nullable)
+        self.assertTrue(unbounded)
+
+    def test_output_optional_array_of_enums(self):
+        cwl_type = WorkflowOutputParameter(
+            id="some-id",
+            type_=[
+                "null",
+                OutputArraySchema(
+                    type_="array",
+                    items=OutputEnumSchema(type_="enum", symbols=["sym-a", "sym-b"]),
+                ),
+            ],
+        )
+
+        # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+        nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
+            cwl_type.type_,
+            format=cwl_type.format,
+        )
+
+        expected_schema = Schema(
+            type="array",
+            nullable=True,
+            minItems=1,
+            items=Schema(
+                type="string",
+                format=cwl_type.format,
+                enum=["sym-a", "sym-b"],
+            ),
+        )
+
+        expected_dump = expected_schema.model_dump()
+        computed_dump = computed_schema.model_dump()
+
+        self.assertDictEqual(expected_dump, computed_dump)
+        self.assertTrue(nullable)
+        self.assertTrue(unbounded)
+
+    def test_output_enum(self):
+        cwl_type = WorkflowOutputParameter(
+            id="some-id",
+            type_=OutputEnumSchema(type_="enum", symbols=["sym-a", "sym-b"]),
+        )
+
+        # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+        nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
+            cwl_type.type_,
+            format=cwl_type.format,
+        )
+
+        expected_schema = Schema(
+            type="string",
+            nullable=False,
+            enum=["sym-a", "sym-b"],
+        )
+
+        expected_dump = expected_schema.model_dump()
+        computed_dump = computed_schema.model_dump()
+
+        self.assertDictEqual(expected_dump, computed_dump)
+        self.assertFalse(nullable)
+        self.assertFalse(unbounded)
+
+    def test_output_optional_enum(self):
+        cwl_type = WorkflowOutputParameter(
+            id="some-id",
+            type_=[
+                "null",
+                OutputEnumSchema(type_="enum", symbols=["sym-a", "sym-b"]),
+            ],
+        )
+
+        # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+        nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
+            cwl_type.type_,
+            format=cwl_type.format,
+        )
+
+        expected_schema = Schema(
+            type="string",
+            nullable=True,
+            enum=["sym-a", "sym-b"],
+        )
+
+        expected_dump = expected_schema.model_dump()
+        computed_dump = computed_schema.model_dump()
+
+        self.assertDictEqual(expected_dump, computed_dump)
+        self.assertTrue(nullable)
+        self.assertFalse(unbounded)
+
+    def test_output_record_throws_error(self):
+        with self.assertRaises(NotImplementedError):
+            cwl_type = WorkflowOutputParameter(
+                id="some-id",
+                type_=OutputRecordSchema(type_="placeholder"),
+            )
+
+            # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+            nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
+                cwl_type.type_,
+                format=cwl_type.format,
+            )
+
+    def test_output_array_of_records_throws_error(self):
+        with self.assertRaises(NotImplementedError):
+            cwl_type = WorkflowOutputParameter(
+                id="some-id",
+                type_=OutputArraySchema(
+                    type_="array", items=OutputRecordSchema(type_="placeholder")
+                ),
+            )
+
+            # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+            nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
+                cwl_type.type_,
+                format=cwl_type.format,
+            )
+
+    def test_output_record_of_records_throws_error(self):
+        with self.assertRaises(NotImplementedError):
+            cwl_type = WorkflowOutputParameter(
+                id="some-id",
+                type_=OutputRecordSchema(type_=OutputRecordSchema(type_="placeholder")),
+            )
+
+            # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
+            nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
+                cwl_type.type_,
+                format=cwl_type.format,
+            )
 
 
 # FIXME: this belongs to EoapProcess test class as the conversion is done by a class method
