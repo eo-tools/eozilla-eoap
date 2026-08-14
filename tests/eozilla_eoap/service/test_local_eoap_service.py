@@ -87,7 +87,7 @@ class LocalEoapServiceSetupTest(TestCase):
         primes_process = primes_entry.description
         self.assertIsInstance(primes_process, ProcessDescription)
         self.assertEqual("primes-workflow", primes_process.id)
-        self.assertEqual("0.0.1", primes_process.version)
+        self.assertEqual("0.0.2", primes_process.version)
 
 
 # noinspection PyMethodMayBeStatic
@@ -213,7 +213,7 @@ class LocalServiceTest(IsolatedAsyncioTestCase):
                 await asyncio.sleep(0.05)
 
             self.assertEqual(JobStatus.successful, job_info.status)
-            self.assertEqual("Done", job_info.message)
+            self.assertIsNone(job_info.message)  # no context that could set a message
             job_results = await self.service.get_job_results(
                 job_id=job_id, request=self.get_request()
             )
