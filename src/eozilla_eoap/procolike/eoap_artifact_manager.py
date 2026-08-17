@@ -177,11 +177,11 @@ class LocalArtifactManager:
         self.staged_in_directories = remaining_entries
 
     def remove_temporary_outputs(self):
-        if self.temporary_output_directory.exists():
+        if self.persistent_output_directory is not None and self.temporary_output_directory.exists():
             shutil.rmtree(self.temporary_output_directory)
 
     def remove_persistent_outputs(self):
-        if self.persistent_output_directory.exists():
+        if self.persistent_output_directory is not None and self.persistent_output_directory.exists():
             shutil.rmtree(self.persistent_output_directory)
 
 
