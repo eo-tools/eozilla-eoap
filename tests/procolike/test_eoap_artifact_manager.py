@@ -1,14 +1,16 @@
 import ftplib
+import itertools
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from unittest import TestCase
 from unittest.mock import patch
+from urllib.request import url2pathname
 
 import pystac
 import requests
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, FileUrl, ValidationError
 
 from eozilla_eoap.procolike import LocalArtifactManager
 from eozilla_eoap.procolike.eoap_artifact_manager import WrappedFtpUrl, WrappedHttpUrl
@@ -689,13 +691,17 @@ class LocalArtifactManagerTest(TestCase):
             patched_result = manager.stage_out(boilerplate_result)
 
             self.assertEqual(len(patched_result), 1)
-            self.assertIsInstance(patched_result["test_out"], str)
+            self.assertIsNotNone(FileUrl(patched_result["test_out"]))
             self.assertEqual(boilerplate_result.keys(), patched_result.keys())
-            self.assertTrue(Path(patched_result["test_out"]).exists())
-            self.assertEqual(Path(patched_result["test_out"]).parent.name, "out")
+
+            patched_fp = url2pathname(patched_result["test_out"], require_scheme=True)
+            self.assertTrue(Path(patched_fp).exists())
+            self.assertEqual(Path(patched_fp).parent.name, "out")
 
             self.assertEqual(len(manager.staged_out_files), 1)
-            self.assertIn(patched_result["test_out"], manager.staged_out_files.items())
+            self.assertIn(
+                patched_fp, [str(x) for x in manager.staged_out_files.values()]
+            )
 
         temporary_output_file.close()
 
@@ -728,17 +734,23 @@ class LocalArtifactManagerTest(TestCase):
             self.assertEqual(len(patched_result), 1)
             self.assertIsInstance(patched_result["test_out"], str)
             self.assertEqual(boilerplate_result.keys(), patched_result.keys())
-            self.assertTrue(Path(patched_result["test_out"]).exists())
-            self.assertEqual(Path(patched_result["test_out"]).parent.parent.name, "out")
+
+            patched_fp = url2pathname(patched_result["test_out"], require_scheme=True)
+            self.assertTrue(Path(patched_fp).exists())
+            self.assertEqual(Path(patched_fp).parent.name, "out")
 
             self.assertEqual(len(manager.staged_out_files), 1)
-            self.assertIn(patched_result["test_out"], manager.staged_out_files.items())
+            self.assertIn(
+                patched_fp, [str(x) for x in manager.staged_out_files.values()]
+            )
 
         temporary_output_file.close()
         temporary_subdirectory.cleanup()
 
     def test_stage_out_stac(self):
         stac_output = Path(Path(__file__).parent.parent, "resources", "example-stac")
+
+        self.assertTrue(stac_output.exists())
 
         boilerplate_result = {
             "test_out": {
@@ -755,8 +767,7 @@ class LocalArtifactManagerTest(TestCase):
                 Path(tdir), "static-job-id-1", NoStagingRequiredProcess(a=3)
             )
             manager.initialize()
-            # TODO: call stac-specific method
-            patched_result = manager.stage_out(boilerplate_result)
+            patched_result = manager.stage_out_results(boilerplate_result)
 
             self.assertEqual(len(patched_result), 1)
             self.assertIsInstance(patched_result["test_out"], str)
@@ -766,7 +777,8 @@ class LocalArtifactManagerTest(TestCase):
             self.assertEqual(Path(patched_result["test_out"]).parent.parent.name, "out")
             self.assertEqual(len(manager.staged_out_directories), 1)
             self.assertIn(
-                patched_result["test_out"], manager.staged_out_directories.items()
+                Path(patched_result["test_out"]).parent,
+                itertools.chain.from_iterable(manager.staged_out_directories.values()),
             )
 
             # check existence of assets/catalog related files
@@ -811,7 +823,6 @@ class LocalArtifactManagerTest(TestCase):
 
             lfile.unlink()
             self.assertEqual(len(manager.staged_out_directories), 1)
-            self.fail("Compare hash values of file contents")
 
     def test_remove_staged_inputs(self):
         self.skipTest(
@@ -823,7 +834,7 @@ class LocalArtifactManagerTest(TestCase):
             TemporaryDirectory() as tdir,
             TemporaryDirectory() as tdir2,
         ):
-            if1 = NamedTemporaryFile(dir=tdir2, suffix=".txt")
+            if1 = NamedTemporaryFile(dir=tdir, suffix=".txt")
             if2 = NamedTemporaryFile(dir=tdir2, suffix=".txt")
 
             manager = LocalArtifactManager(
@@ -850,8 +861,8 @@ class LocalArtifactManagerTest(TestCase):
             TemporaryDirectory() as tdir,
             TemporaryDirectory() as tdir2,
         ):
-            id1 = TemporaryDirectory(dir=tdir2, delete=False)
-            id2 = TemporaryDirectory(dir=tdir2, delete=False)
+            id1 = TemporaryDirectory(dir=tdir)
+            id2 = TemporaryDirectory(dir=tdir2)
 
             manager = LocalArtifactManager(
                 Path(tdir), "static-job-id-1", NoStagingRequiredProcess(a=3)
