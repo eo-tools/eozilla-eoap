@@ -50,10 +50,10 @@ class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
         cwl_path: Path = Path(url2pathname(new_eoap.source, require_scheme=True))
 
         # assume that all processes stored as files are also present in the internal mapping
-        exisiting_process: EoapProcess = self._eoaps.get(new_eoap.description.id)
+        exisiting_process: EoapProcess | None = self._eoaps.get(new_eoap.description.id)
         process_exists: bool = exisiting_process is not None
 
-        if process_exists and not exisiting_process.description.mutable:
+        if process_exists and not exisiting_process.description.mutable:  # type: ignore[union-attr]
             raise RuntimeError(f"{new_eoap.description.id} is immutable")
         if process_exists and not ignore_existing:
             raise KeyError(
@@ -76,7 +76,7 @@ class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
     def read(self, name: str) -> EoapProcess:
         return self._eoaps[name]
 
-    def read_all(self) -> Dict[str, EoapProcess]:
+    def read_all(self) -> Mapping[str, EoapProcess]:
         return self._eoaps
 
     def update(self, contents: dict, entrypoint: str) -> EoapProcess:

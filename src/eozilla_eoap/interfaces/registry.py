@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from typing import Dict
 
 from .process import Process
@@ -48,7 +49,7 @@ class Registry(ABC):
         """
 
     @abstractmethod
-    def read_all(self, *args, **kwargs) -> Dict[str, Process]:
+    def read_all(self) -> Mapping[str, Process]:
         """Get a dictionary containing all registered processes.
 
         The dictonary must use process identifiers as presented to
