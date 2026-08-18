@@ -1,11 +1,12 @@
-from abc import ABC, abstractclassmethod, abstractmethod
+from abc import ABC, abstractmethod
 
 from gavicore.models import ProcessDescription
 from pydantic import BaseModel
 
 
 class Process(ABC):
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def create(cls, *args, **kwargs) -> "Process":
         """Create a New In-Memory Representation of a Process
 
