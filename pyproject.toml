@@ -45,7 +45,7 @@ dependencies = [
   "wraptile",
   "cwl-utils>=0.42,<0.43",
   "cwltool>=3.2.20260413085819,<4",
-  "pystac[validation,urllib3]>=1.15.2,<2",
+  "pystac[validation,urllib3]>=1.15.2,<2", "types-pyyaml>=6.0.12.20260815,<7",
 ]
 
 [project.urls]
