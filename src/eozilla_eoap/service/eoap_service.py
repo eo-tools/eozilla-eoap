@@ -433,15 +433,17 @@ class LocalEoapService(ServiceBase, DruService):
         return future_result
 
     def _get_process(self, process_id: str) -> EoapProcess:
-        process = self.process_registry.read(process_id)
-        if process is None:
-            raise ServiceException(404, detail=f"Process {process_id!r} does not exist")
-        if not process.description.mutable:
-            raise ServiceException(
-                403,
-                type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/immutable-process",
-                detail=f"Process {process_id!r} is immutable",
-            )
+        try:
+            process = self.process_registry.read(process_id)
+        except KeyError:
+            raise ServiceException(404, detail=f"Process {process_id!r} does not exist") from None
+        else:
+            if not process.description.mutable:
+                raise ServiceException(
+                    403,
+                    type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/immutable-process",
+                    detail=f"Process {process_id!r} is immutable",
+                ) from None
         return process
 
     def _get_job(
@@ -474,6 +476,6 @@ def _run_imported_job(
     process = service.process_registry._eoaps.get(process_id)
     if process is None:
         raise RuntimeError(f"Process {process_id!r} does not exist")
-    job = Job.create(process, process_request, backend, job_id=job_id)
+    job = Job.create(process, process_request, backend, job_id=job_id, persistency_directory=service.persitency_directory)
     job_results = job.run()
     return job.job_info, job_results

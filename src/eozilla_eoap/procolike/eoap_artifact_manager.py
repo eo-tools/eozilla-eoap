@@ -189,6 +189,8 @@ class LocalArtifactManager:
 
         shutil.copytree(tmp_log_dir, per_log_dir, symlinks=False, dirs_exist_ok=True)
 
+        self.staged_out_directories["logs"] = per_log_dir
+
     def stage_out_results(self, results: Dict[str, Any]) -> Dict[str, Any]:
         """Stage-out `File` and `Directory` Workflow Results.
 
@@ -212,12 +214,15 @@ class LocalArtifactManager:
         tmp_out_dir: Path = Path(self.temporary_output_directory, "out")
         per_out_dir: Path = Path(self.persistent_output_directory, "out")
 
-        self.staged_out_files, results = _iteratively_stage_out_files(
+        staged_out_files, results = _iteratively_stage_out_files(
             results, src_base=tmp_out_dir, dst_base=per_out_dir
         )
-        self.staged_out_directories, results = _iteratively_stage_out_directories(
+        self.staged_out_files.update(staged_out_files)
+
+        staged_out_directories, results = _iteratively_stage_out_directories(
             results, dst_base=per_out_dir
         )
+        self.staged_out_directories.update(staged_out_directories)
 
         return results
 
@@ -232,11 +237,16 @@ class LocalArtifactManager:
         Iterate over all previously staged-in files, deleting them
         and the temporary directory they were placed in.
         """
-        for _path in itertools.chain.from_iterable(self.staged_in_files.values()):
-            if not _path.exists():
-                continue
-            _path.unlink()
-            shutil.rmtree(_path.parent)
+        remaining_entries: Dict[str, List[Path]] = {}
+        for arg in self.staged_in_files.keys():
+            for _path in self.staged_in_files[arg]:
+                if not _path.exists():
+                    remaining_entries[arg] = _path
+                    continue
+                _path.unlink()
+                shutil.rmtree(_path.parent)
+
+        self.staged_in_files = remaining_entries
 
     def remove_staged_in_directories(self):
         """Remove Staged-In `Directories`.
@@ -244,19 +254,22 @@ class LocalArtifactManager:
         Iterate over all previously staged-in STAC catalogs,
         unlinking the entire temporary directory they were placed in.
         """
-        for _path in itertools.chain.from_iterable(self.staged_in_directories.values()):
-            if not _path.exists():
-                continue
-            shutil.rmtree(_path)
+        remaining_entries: Dict[str, List[Path]] = {}
+        for arg in self.staged_in_directories.keys():
+            for _path in self.staged_in_directories[arg]:
+                if not _path.exists():
+                    remaining_entries[arg] = _path
+                    continue
+                shutil.rmtree(_path)
+
+        self.staged_in_directories = remaining_entries
 
     def remove_temporary_outputs(self):
-        """Remove temporary output directory."""
-        if self.temporary_output_directory.exists():
+        if self.temporary_output_directory is not None and self.temporary_output_directory.exists():
             shutil.rmtree(self.temporary_output_directory)
 
     def remove_persistent_outputs(self):
-        """Remove permanent output directory."""
-        if self.persistent_output_directory.exists():
+        if self.persistent_output_directory is not None and self.persistent_output_directory.exists():
             shutil.rmtree(self.persistent_output_directory)
 
 
@@ -451,7 +464,11 @@ def _iteratively_stage_in_files(
 
                 if isinstance(potential_file, list):
                     return_mapping[tag] = [
-                        _dispatch_singular_file_download(_string_to_url_class(x.path))
+                        Path(
+                            _dispatch_singular_file_download(
+                                _string_to_url_class(x.path)
+                            )
+                        )
                         for x in potential_file
                     ]
 
@@ -466,8 +483,10 @@ def _iteratively_stage_in_files(
 
                 else:
                     return_mapping[tag] = [
-                        _dispatch_singular_file_download(
-                            _string_to_url_class(potential_file.path)
+                        Path(
+                            _dispatch_singular_file_download(
+                                _string_to_url_class(potential_file.path)
+                            )
                         ),
                     ]
 
@@ -479,7 +498,9 @@ def _iteratively_stage_in_files(
         elif issubclass(annotation, File):
             f: File = model.__dict__.get(tag)
             return_mapping[tag] = [
-                _dispatch_singular_file_download(_string_to_url_class(f.path)),
+                Path(
+                    _dispatch_singular_file_download(_string_to_url_class(f.path)),
+                )
             ]
 
             f.path = str(return_mapping[tag][0])
@@ -917,6 +938,7 @@ def _iteratively_stage_out_files(
     for result_tag, result_value in results.items():
         if type(result_value) is list:
             patched_sublist = []
+            staged_out_sublist = []
             for item in result_value:
                 if type(item) is not dict:
                     patched_sublist.append(item)
@@ -929,15 +951,15 @@ def _iteratively_stage_out_files(
 
                 f: File = File.model_validate(item)
                 src_path: str = url2pathname(f.location, require_scheme=True)
-                # maybe file in subdir whose structure should be preserved?!
-                dst_path: str = src_path.replace(str(src_base), str(dst_base))
-                Path(dst_path).parent.mkdir(parents=True, exist_ok=False)
+                dst_path: str = Path(dst_base, Path(src_path).name)
 
                 shutil.copyfile(src_path, dst_path)
 
-                patched_sublist.append(pathname2url(dst_path))
+                patched_sublist.append(pathname2url(dst_path, add_scheme=True))
+                staged_out_files.append(dst_path)
 
             patched_result_dict[result_tag] = patched_sublist
+            staged_out_files[result_tag] = staged_out_sublist
         elif type(result_value) is dict:
             class_: str | None = result_value.get("class")
             if class_ is None or class_ != "File":
@@ -946,13 +968,12 @@ def _iteratively_stage_out_files(
 
             f: File = File.model_validate(result_value)
             src_path: str = url2pathname(f.location, require_scheme=True)
-            # maybe file in subdir whose structure should be preserved?!
-            dst_path: str = src_path.replace(str(src_base), str(dst_base))
-            Path(dst_path).parent.mkdir(parents=True, exist_ok=False)
+            dst_path: str = Path(dst_base, Path(src_path).name)
 
             shutil.copyfile(src_path, dst_path)
 
-            patched_result_dict[result_tag] = pathname2url(dst_path)
+            patched_result_dict[result_tag] = pathname2url(dst_path, add_scheme=True)
+            staged_out_files[result_tag] = dst_path
         else:
             patched_result_dict[result_tag] = result_value
 
@@ -989,6 +1010,7 @@ def _iteratively_stage_out_directories(
     for result_tag, result_value in results.items():
         if type(result_value) is list:
             patched_sublist = []
+            staged_out_sublist = []
             for item in result_value:
                 if type(item) is not dict:
                     patched_sublist.append(item)
@@ -1008,8 +1030,12 @@ def _iteratively_stage_out_directories(
                 )
 
                 patched_sublist.append(new_catalog.get_self_href())
+                staged_out_sublist.append(
+                    _get_local_catalog_base_directory(new_catalog)
+                )
 
             patched_result_dict[result_tag] = patched_sublist
+            staged_out_directories[result_tag] = staged_out_sublist
         elif type(result_value) is dict:
             class_: str | None = result_value.get("class")
             if class_ is None or class_ != "Directory":
@@ -1025,6 +1051,9 @@ def _iteratively_stage_out_directories(
             )
 
             patched_result_dict[result_tag] = new_catalog.get_self_href()
+            staged_out_directories[result_tag] = [
+                _get_local_catalog_base_directory(new_catalog)
+            ]
         else:
             patched_result_dict[result_tag] = result_value
 

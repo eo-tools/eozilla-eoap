@@ -34,6 +34,7 @@ $graph:
 - class: CommandLineTool
   label: Sleep Tool
   id: '#sleep-tool'
+  baseCommand: ['python', '/sleep.py']
   inputs:
     duration:
       inputBinding:
@@ -56,10 +57,10 @@ $graph:
       type: float
   requirements:
     DockerRequirement:
-      dockerPull: floriankaterndahl/sleep-eoap:0.0.1
+      dockerPull: floriankaterndahl/sleep-eoap:0.0.2
     InlineJavascriptRequirement: {}
   stdout: sleep.txt
 $namespaces:
   s: https://schema.org/
 cwlVersion: v1.2
-s:version: 0.0.1
+s:version: 0.0.2

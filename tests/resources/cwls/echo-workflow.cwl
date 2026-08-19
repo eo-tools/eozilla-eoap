@@ -1,0 +1,1 @@
+../../../example-eoaps/echo/echo-workflow.cwl

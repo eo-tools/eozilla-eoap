@@ -154,3 +154,29 @@ mkdocstrings-python = ">=2.0.5,<3"
 [tool.pixi.tasks]
 serve-docs = "mkdocs serve"
 build-docs = "mkdocs build"
+test-cwltool = "pytest tests/eozilla_eoap/cwltool"
+test-interfaces = "pytest tests/eozilla_eoap/interfaces"
+test-procolike = "pytest tests/eozilla_eoap/procolike"
+test-service = "pytest tests/eozilla_eoap/service"
+check-cwltool = "ruff check src/eozilla_eoap/cwltool"
+check-interfaces = "ruff check src/eozilla_eoap/interfaces"
+check-procolike = "ruff check src/eozilla_eoap/procolike"
+check-service = "ruff check src/eozilla_eoap/service"
+typecheck = "mypy src/"
+
+[tool.pixi.tasks.tests]
+depends-on = [
+  "test-cwltool",
+  "test-interfaces",
+  "test-procolike",
+  "test-service"
+]
+
+[tool.pixi.tasks.checks]
+depends-on = [
+    "check-cwltool",
+    "check-interfaces",
+    "check-procolike",
+    "check-service",
+    "typecheck"
+]
