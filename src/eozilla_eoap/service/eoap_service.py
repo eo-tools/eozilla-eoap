@@ -21,7 +21,6 @@ from gavicore.dru_service import DruService
 from gavicore.models import (
     JobInfo,
     JobList,
-    JobResult,
     JobResults,
     JobStatus,
     ProcessDescription,
@@ -34,6 +33,7 @@ from pydantic import ValidationError
 from wraptile.exceptions import ServiceException
 from wraptile.services.base import ServiceBase
 
+from eozilla_eoap.interfaces.process import Process
 from eozilla_eoap.interfaces.registry import Registry
 from eozilla_eoap.interfaces.runner import Runner
 from eozilla_eoap.procolike import (
@@ -58,9 +58,9 @@ class LocalEoapService(ServiceBase, DruService):
         title: str,
         cwl_runner: Runner,
         persitency_directory: Path,
+        process_registry: Registry,
         description: Optional[str] = None,
         conforms_to: Optional[List[str]] = None,
-        process_registry: Optional[Registry] = None,
     ):
         super().__init__(title=title, description=description, conforms_to=conforms_to)
         # TODO: Doesn't the executor become more of a "submitter" in my case?
@@ -68,12 +68,9 @@ class LocalEoapService(ServiceBase, DruService):
         self.cwl_runner: Runner = cwl_runner
         self.persitency_directory: Path = persitency_directory
 
-        self.process_registry: Optional[Registry] = process_registry
-        # (
-        #     process_registry or LocalEaopRegistry(mkdtemp(), False)
-        # )
+        self.process_registry: Registry = process_registry
         self.jobs: Dict[str, Job] = {}
-        self.job_results: Dict[str, JobResult | None] = {}
+        self.job_results: Dict[str, JobResults | None] = {}
         self.job_uses_processes: dict[str, bool] = {}
         self._executor_uses_processes = False
         self._executor_max_workers = 3
@@ -256,7 +253,7 @@ class LocalEoapService(ServiceBase, DruService):
                 detail=f"Unsupported media types. Accepting EOAPs as {', '.join(self.SUPPORTED_MEDIA_TYPES)}.",
             )
 
-        eoap: dict = await load_and_validate_from_body(request, w=w)
+        eoap: dict = await load_and_validate_from_body(request)
 
         try:
             process: EoapProcess = self.process_registry.create(
@@ -309,7 +306,7 @@ class LocalEoapService(ServiceBase, DruService):
                 detail=f"Unsupported media types. Accepting EOAPs as {', '.join(self.SUPPORTED_MEDIA_TYPES)}.",
             )
 
-        eoap: dict = await load_and_validate_from_body(request, w=w)
+        eoap: dict = await load_and_validate_from_body(request)
 
         try:
             process: EoapProcess = self.process_registry.update(
@@ -432,11 +429,13 @@ class LocalEoapService(ServiceBase, DruService):
             return job_results
         return future_result
 
-    def _get_process(self, process_id: str) -> EoapProcess:
+    def _get_process(self, process_id: str) -> Process:
         try:
             process = self.process_registry.read(process_id)
         except KeyError:
-            raise ServiceException(404, detail=f"Process {process_id!r} does not exist") from None
+            raise ServiceException(
+                404, detail=f"Process {process_id!r} does not exist"
+            ) from None
         else:
             if not process.description.mutable:
                 raise ServiceException(
@@ -476,6 +475,12 @@ def _run_imported_job(
     process = service.process_registry._eoaps.get(process_id)
     if process is None:
         raise RuntimeError(f"Process {process_id!r} does not exist")
-    job = Job.create(process, process_request, backend, job_id=job_id, persistency_directory=service.persitency_directory)
+    job = Job.create(
+        process,
+        process_request,
+        backend,
+        job_id=job_id,
+        persistency_directory=service.persitency_directory,
+    )
     job_results = job.run()
     return job.job_info, job_results

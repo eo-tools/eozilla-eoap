@@ -1,4 +1,4 @@
-from abc import ABC, abstractclassmethod, abstractmethod
+from abc import ABC, abstractmethod
 
 from gavicore.models import ProcessDescription
 from pydantic import BaseModel
@@ -12,8 +12,9 @@ class Process(ABC):
     a minimal subset of interfaces and properties to, theoretically,
     allow vastly different processes to implement this base class.
     """
-
-    @abstractclassmethod
+    
+    @classmethod
+    @abstractmethod
     def create(cls, *args, **kwargs) -> "Process":
         """Create a New In-Memory Representation of a Process.
 

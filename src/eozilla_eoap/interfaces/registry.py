@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Dict
+from collections.abc import Mapping
 
 from .process import Process
 
-
-class Registry(ABC):
+class Registry(Mapping[str, Process], ABC):
     """Registry Base Class to Manage Processes.
 
     The registry is responsible for the creation, reading, updating
@@ -17,7 +16,6 @@ class Registry(ABC):
     it must offer a means to restore previously added processes on
     startup of the OGC API - Processes compliant server.
     """
-
     @abstractmethod
     def configure(self, *args, **kwargs) -> None:
         """Configure and setup a registry.
@@ -61,7 +59,7 @@ class Registry(ABC):
         """
 
     @abstractmethod
-    def read_all(self, *args, **kwargs) -> Dict[str, Process]:
+    def read_all(self) -> Mapping[str, Process]:
         """Get a dictionary containing all registered processes.
 
         The dictonary must use process identifiers as presented to

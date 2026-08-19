@@ -40,7 +40,7 @@ class AyncEoapAcceptanceTest(IsolatedAsyncioTestCase):
         self.mock_request.body.return_value = b""
 
         with self.assertRaises(RuntimeError):
-            await load_and_validate_from_body(self.mock_request, w=None)
+            await load_and_validate_from_body(self.mock_request)
 
     async def test_error_on_invalid_cwl(self):
         invalid_cwl = self.valid_dict.copy()
@@ -49,7 +49,7 @@ class AyncEoapAcceptanceTest(IsolatedAsyncioTestCase):
         self.mock_request.body.return_value = json.dumps(invalid_cwl).encode("utf-8")
 
         with self.assertRaises(ServiceException):
-            await load_and_validate_from_body(self.mock_request, w=None)
+            await load_and_validate_from_body(self.mock_request)
 
     async def test_error_on_invalid_eoap(self):
         invalid_eoap = self.valid_dict.copy()
@@ -58,13 +58,13 @@ class AyncEoapAcceptanceTest(IsolatedAsyncioTestCase):
         self.mock_request.body.return_value = json.dumps(invalid_eoap).encode("utf-8")
 
         with self.assertRaises(ServiceException):
-            await load_and_validate_from_body(self.mock_request, w=None)
+            await load_and_validate_from_body(self.mock_request)
 
     async def test_correctly_load_from_json(self):
         with open(Path(self.static_resources_path, "echo-workflow.json"), "rt") as f:
             self.mock_request.body.return_value = f.read()
 
-            d = await load_and_validate_from_body(self.mock_request, w=None)
+            d = await load_and_validate_from_body(self.mock_request)
 
         self.assertIsInstance(d, dict)
 
@@ -72,7 +72,7 @@ class AyncEoapAcceptanceTest(IsolatedAsyncioTestCase):
         with open(Path(self.static_resources_path, "echo-workflow.cwl"), "rt") as f:
             self.mock_request.body.return_value = f.read()
 
-            d = await load_and_validate_from_body(self.mock_request, w=None)
+            d = await load_and_validate_from_body(self.mock_request)
 
         self.assertIsInstance(d, dict)
 

@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Literal, Tuple, get_origin
 
 from cwl_utils import errors, parser
 from gavicore.models import (
+    DataType,
     DescriptionType,
     InputDescription,
     OutputDescription,
@@ -14,7 +15,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    FileUrl,
     create_model,
     field_validator,
     model_validator,
@@ -46,7 +46,7 @@ class EoapProcess(Process):
             [OGC API - Processes - Part 1: Core](https://docs.ogc.org/is/18-062r2/18-062r2.html#toc37).
     """
 
-    source: FileUrl | None
+    source: str
     entrypoint: str
     _model_class: type[BaseModel]
     _description: ProcessDescription
@@ -130,6 +130,7 @@ class EoapProcess(Process):
     @classmethod
     def _extract_process_metadata(
         cls, cwl: dict, w: str | None = None
+<<<<<<< HEAD
     ) -> Tuple[str, str, str, str]:
         """Extract Set of CWL Workflow Metadata
 
@@ -146,10 +147,13 @@ class EoapProcess(Process):
                 (2) version tag, (3) workflow title, (4) workflow description and
                 (5) workflow keywords.
         """
+=======
+    ) -> Tuple[str, str, str, str, List[str]]:
+>>>>>>> typechecking
         process_entry_node = cls._find_entrypoint(cwl, w)
 
         # [`cwl_utils`] gobbles metadata, thus using raw dict is required
-        namespaces: dict = cwl.get("$namespaces")
+        namespaces: Dict | None = cwl.get("$namespaces")
         schema_org_key: str = ""
 
         if namespaces is None or type(namespaces) is not dict:
@@ -163,7 +167,7 @@ class EoapProcess(Process):
         if not schema_org_key:
             raise NamespaceNotFoundError("schema.org namespace not found")
 
-        return (
+        ret_tuple = (
             process_entry_node.id.split("#", 1)[-1],
             cwl.get(schema_org_key + ":version"),
             process_entry_node.label,
@@ -171,11 +175,14 @@ class EoapProcess(Process):
             cwl.get(schema_org_key + ":keywords"),
         )
 
+        return ret_tuple
+
     @classmethod
     def _extract_cwl_argument_descriptions(
         cls,
         cwl: dict,
         entrypoint: str,
+<<<<<<< HEAD
     ) -> Tuple[InputDescription, OutputDescription]:
         """Convert CWL Workflow Inputs and Outputs to OGC-compliant Descriptions
 
@@ -208,6 +215,10 @@ class EoapProcess(Process):
                 description.
         """
         process_entry_node: dict = cls._find_entrypoint(cwl, entrypoint)
+=======
+    ) -> Tuple[Dict[str, InputDescription], Dict[str, OutputDescription]]:
+        process_entry_node: parser.Workflow = cls._find_entrypoint(cwl, entrypoint)
+>>>>>>> typechecking
 
         inputs_ = cls._get_workflow_input(process_entry_node)
         ogc_conformant_inputs = {}
@@ -242,12 +253,12 @@ class EoapProcess(Process):
 
             local_id_tag = output_.id.rsplit("/", 1)[-1]
 
-            description: DescriptionType = DescriptionType(
+            description: DescriptionType = DescriptionType(  # type: ignore[no-redef]
                 title=output_.label, description=output_.doc
             )
 
             t_ = output_.type_
-            f_: str | None = output_.format
+            f_: str | None = output_.format  # type: ignore[no-redef]
 
             optional, unbounded, schema = _resolve_ogc_schema_from_cwl_utils(
                 t_, default=None, format=f_
@@ -261,6 +272,7 @@ class EoapProcess(Process):
 
     @classmethod
     def _generate_model_class(cls, cwl: dict, entrypoint: str) -> type[BaseModel]:
+<<<<<<< HEAD
         """Generate pydantic Model Class for Workflow/Process Inputs
 
         The generated pydantic model can be used to validated user inputs
@@ -276,14 +288,22 @@ class EoapProcess(Process):
             type[BaseModel]: Dynamically created process model.
         """
         process_entry_node: dict = cls._find_entrypoint(cwl, entrypoint)
+=======
+        process_entry_node: parser.Workflow = cls._find_entrypoint(cwl, entrypoint)
+>>>>>>> typechecking
 
         return cwl_inputs_to_model_class(process_entry_node.inputs)
 
     @classmethod
+<<<<<<< HEAD
     def _find_entrypoint(cls, cwl_dict: dict, w: str | None = None) -> Dict:
         """Extract Workflow Entrypoint
 
         Extract either the Workflow instance with the id tag given by `w` or,
+=======
+    def _find_entrypoint(cls, cwl_dict: dict, w: str | None = None) -> parser.Workflow:
+        """Extract either the Workflow instance with the id tag given by `w` or,
+>>>>>>> typechecking
         if the paramter is None, the first instance of a Workflow object.
 
         Args:
@@ -501,7 +521,7 @@ def _resolve_ogc_schema_from_cwl_utils(
                 nullable,
                 False,
                 Schema(
-                    type="string",
+                    type=DataType("string"),
                     nullable=nullable,
                     default=_recursively_extract_special_defaults_to_ogc(default),
                     contentMediaType=format,
@@ -513,7 +533,7 @@ def _resolve_ogc_schema_from_cwl_utils(
                 nullable,
                 False,
                 Schema(
-                    type="string",
+                    type=DataType("string"),
                     nullable=nullable,
                     default=_recursively_extract_special_defaults_to_ogc(default),
                     contentMediaType=format,
@@ -525,7 +545,7 @@ def _resolve_ogc_schema_from_cwl_utils(
                 nullable,
                 False,
                 Schema(
-                    type=FLAT_TYPE_MAPPING_TO_OGC[cwl_type],
+                    type=DataType(FLAT_TYPE_MAPPING_TO_OGC[cwl_type]),
                     nullable=nullable,
                     default=default,
                 ),
@@ -549,7 +569,7 @@ def _resolve_ogc_schema_from_cwl_utils(
             nullable,
             False,
             Schema(
-                type="string",
+                type=DataType("string"),
                 nullable=nullable,
                 enum=normalized_symbols,
                 default=default,
@@ -568,7 +588,7 @@ def _resolve_ogc_schema_from_cwl_utils(
             nullable,
             True,
             Schema(
-                type="array",
+                type=DataType("array"),
                 minItems=1,
                 items=s,
                 default=_recursively_extract_special_defaults_to_ogc(default),

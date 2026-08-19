@@ -18,6 +18,7 @@ ALLOWED_ENCODING = (
 )
 
 
+<<<<<<< HEAD
 async def load_and_validate_from_body(request: Request, w: str | None) -> dict:
     """Load and Validate a CWL Document from HTTP Body
 
@@ -34,6 +35,9 @@ async def load_and_validate_from_body(request: Request, w: str | None) -> dict:
     Returns:
         dict: Loaded (but not parsed) CWL body.
     """
+=======
+async def load_and_validate_from_body(request: Request) -> dict:
+>>>>>>> typechecking
     content_header: str = request.headers.get("Content-Type")
 
     body: bytes = await request.body()
@@ -46,7 +50,7 @@ async def load_and_validate_from_body(request: Request, w: str | None) -> dict:
     if not _is_valid_as_cwl(loaded_cwl):
         raise ServiceException(status_code=422, detail="Not a valid cwl")
 
-    if not _is_valid_as_eoap(loaded_cwl, w):
+    if not _is_valid_as_eoap(loaded_cwl):
         raise ServiceException(status_code=422, detail="Not a valid eoap")
 
     return loaded_cwl
@@ -124,6 +128,7 @@ def _is_valid_as_cwl(content: dict) -> bool:
     return not bool(result)
 
 
+<<<<<<< HEAD
 def _is_valid_as_eoap(content: dict, w: str | None = None) -> bool:
     """Validate an EOAP against OGC's Requirements
 
@@ -142,6 +147,9 @@ def _is_valid_as_eoap(content: dict, w: str | None = None) -> bool:
     Returns:
         bool: True if EOAP is valid, False otherwise.
     """
+=======
+def _is_valid_as_eoap(content: dict) -> bool:
+>>>>>>> typechecking
     cwl_object = parser.load_document(content, load_all=True)
 
     eoap_requirements_passed = [
@@ -202,7 +210,8 @@ def check_eoap_requirement_08(cwl_object: list) -> bool:
     all_have_docker_requirement = True
     requirements: List[parser.ProcessRequirement] = map(lambda x: x.requirements, clis)
     for req in requirements:
-        if req is None: return False
+        if req is None:
+            return False
         all_have_docker_requirement = all_have_docker_requirement and any(
             map(lambda x: isinstance(x, parser.DockerRequirement), req)
         )
