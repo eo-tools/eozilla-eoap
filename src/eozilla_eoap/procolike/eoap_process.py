@@ -15,7 +15,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    FileUrl,
     create_model,
     field_validator,
     model_validator,

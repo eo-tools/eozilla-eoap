@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import Dict
 
 from .process import Process
 
 
-class Registry(ABC):
+class Registry(Mapping[str, Process], ABC):
     @abstractmethod
     def configure(self, *args, **kwargs) -> None:
         """Configure and setup a registry.

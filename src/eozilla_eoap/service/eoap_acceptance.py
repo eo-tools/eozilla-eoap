@@ -18,7 +18,7 @@ ALLOWED_ENCODING = (
 )
 
 
-async def load_and_validate_from_body(request: Request, w: str) -> dict:
+async def load_and_validate_from_body(request: Request) -> dict:
     content_header: str = request.headers.get("Content-Type")
 
     body: bytes = await request.body()
@@ -31,7 +31,7 @@ async def load_and_validate_from_body(request: Request, w: str) -> dict:
     if not _is_valid_as_cwl(loaded_cwl):
         raise ServiceException(status_code=422, detail="Not a valid cwl")
 
-    if not _is_valid_as_eoap(loaded_cwl, w):
+    if not _is_valid_as_eoap(loaded_cwl):
         raise ServiceException(status_code=422, detail="Not a valid eoap")
 
     return loaded_cwl
@@ -74,7 +74,7 @@ def _is_valid_as_cwl(content: dict) -> bool:
     return not bool(result)
 
 
-def _is_valid_as_eoap(content: dict, w: str | None = None) -> bool:
+def _is_valid_as_eoap(content: dict) -> bool:
     cwl_object = parser.load_document(content, load_all=True)
 
     eoap_requirements_passed = [
@@ -118,7 +118,8 @@ def check_eoap_requirement_08(cwl_object: list) -> bool:
     all_have_docker_requirement = True
     requirements: List[parser.ProcessRequirement] = map(lambda x: x.requirements, clis)
     for req in requirements:
-        if req is None: return False
+        if req is None:
+            return False
         all_have_docker_requirement = all_have_docker_requirement and any(
             map(lambda x: isinstance(x, parser.DockerRequirement), req)
         )

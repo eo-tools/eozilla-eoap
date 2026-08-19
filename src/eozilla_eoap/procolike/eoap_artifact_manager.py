@@ -753,7 +753,7 @@ def _iteratively_stage_out_directories(
 
             d: Directory = Directory.model_validate(result_value)  # type: ignore[no-redef]
 
-            old_catalog: ItemCollection | Catalog | Item = (   # type: ignore[no-redef]
+            old_catalog: ItemCollection | Catalog | Item = (  # type: ignore[no-redef]
                 _load_local_stac_from_cwl_output(d.location)
             )
 

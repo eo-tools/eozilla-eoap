@@ -1,4 +1,4 @@
-from .runner import CwltoolLogger, CwlToolRunner, CallbackExecutor
+from .runner import CallbackExecutor, CwltoolLogger, CwlToolRunner
 
 __all__ = [
     "CwltoolLogger",
