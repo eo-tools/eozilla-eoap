@@ -729,7 +729,7 @@ def _iteratively_stage_out_directories(
 
                 old_catalog: ItemCollection | Catalog | Item = (
                     _load_local_stac_from_cwl_output(d.location)
-                )  # type: ignore[arg-type]
+                )
 
                 if not isinstance(old_catalog, Catalog):
                     raise RuntimeError
@@ -753,9 +753,9 @@ def _iteratively_stage_out_directories(
 
             d: Directory = Directory.model_validate(result_value)  # type: ignore[no-redef]
 
-            old_catalog: ItemCollection | Catalog | Item = (
+            old_catalog: ItemCollection | Catalog | Item = (   # type: ignore[no-redef]
                 _load_local_stac_from_cwl_output(d.location)
-            )  # type: ignore[no-redef]
+            )
 
             if not isinstance(old_catalog, Catalog):
                 raise RuntimeError
