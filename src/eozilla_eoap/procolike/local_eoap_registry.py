@@ -11,7 +11,7 @@ from eozilla_eoap.interfaces.registry import Registry
 from .eoap_process import EoapProcess
 
 
-class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
+class LocalEaopRegistry(Registry):
     """Implementation of a Local Process Registry
 
     Inheriting from Mapping gives us easy access to dict-like
@@ -97,12 +97,8 @@ class LocalEaopRegistry(Mapping[str, EoapProcess], Registry):
         """See [`Registry.read`][eozilla_eoap.interfaces.Registry]"""
         return self._eoaps[name]
 
-<<<<<<< HEAD
-    def read_all(self) -> Dict[str, EoapProcess]:
-        """See [`Registry.read_all`][eozilla_eoap.interfaces.Registry]"""
-=======
     def read_all(self) -> Mapping[str, EoapProcess]:
->>>>>>> typechecking
+        """See [`Registry.read_all`][eozilla_eoap.interfaces.Registry]"""
         return self._eoaps
 
     def update(self, contents: dict, entrypoint: str) -> EoapProcess:

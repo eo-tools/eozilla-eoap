@@ -18,8 +18,7 @@ ALLOWED_ENCODING = (
 )
 
 
-<<<<<<< HEAD
-async def load_and_validate_from_body(request: Request, w: str | None) -> dict:
+async def load_and_validate_from_body(request: Request) -> dict:
     """Load and Validate a CWL Document from HTTP Body
 
     Args:
@@ -35,9 +34,6 @@ async def load_and_validate_from_body(request: Request, w: str | None) -> dict:
     Returns:
         dict: Loaded (but not parsed) CWL body.
     """
-=======
-async def load_and_validate_from_body(request: Request) -> dict:
->>>>>>> typechecking
     content_header: str = request.headers.get("Content-Type")
 
     body: bytes = await request.body()
@@ -128,8 +124,7 @@ def _is_valid_as_cwl(content: dict) -> bool:
     return not bool(result)
 
 
-<<<<<<< HEAD
-def _is_valid_as_eoap(content: dict, w: str | None = None) -> bool:
+def _is_valid_as_eoap(content: dict) -> bool:
     """Validate an EOAP against OGC's Requirements
 
     The OGC Best Practice Guideline for EOAPs defines several
@@ -147,9 +142,6 @@ def _is_valid_as_eoap(content: dict, w: str | None = None) -> bool:
     Returns:
         bool: True if EOAP is valid, False otherwise.
     """
-=======
-def _is_valid_as_eoap(content: dict) -> bool:
->>>>>>> typechecking
     cwl_object = parser.load_document(content, load_all=True)
 
     eoap_requirements_passed = [

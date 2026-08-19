@@ -130,8 +130,7 @@ class EoapProcess(Process):
     @classmethod
     def _extract_process_metadata(
         cls, cwl: dict, w: str | None = None
-<<<<<<< HEAD
-    ) -> Tuple[str, str, str, str]:
+    ) -> Tuple[str, str, str, str, List[str]]:
         """Extract Set of CWL Workflow Metadata
 
         Args:
@@ -147,9 +146,6 @@ class EoapProcess(Process):
                 (2) version tag, (3) workflow title, (4) workflow description and
                 (5) workflow keywords.
         """
-=======
-    ) -> Tuple[str, str, str, str, List[str]]:
->>>>>>> typechecking
         process_entry_node = cls._find_entrypoint(cwl, w)
 
         # [`cwl_utils`] gobbles metadata, thus using raw dict is required
@@ -182,8 +178,7 @@ class EoapProcess(Process):
         cls,
         cwl: dict,
         entrypoint: str,
-<<<<<<< HEAD
-    ) -> Tuple[InputDescription, OutputDescription]:
+    ) -> Tuple[Dict[str, InputDescription], Dict[str, OutputDescription]]:
         """Convert CWL Workflow Inputs and Outputs to OGC-compliant Descriptions
 
         Iterate over all input descriptions of the workflow entrypoint and
@@ -214,11 +209,7 @@ class EoapProcess(Process):
                 process input description and (2) OGC-compliant process output
                 description.
         """
-        process_entry_node: dict = cls._find_entrypoint(cwl, entrypoint)
-=======
-    ) -> Tuple[Dict[str, InputDescription], Dict[str, OutputDescription]]:
         process_entry_node: parser.Workflow = cls._find_entrypoint(cwl, entrypoint)
->>>>>>> typechecking
 
         inputs_ = cls._get_workflow_input(process_entry_node)
         ogc_conformant_inputs = {}
@@ -272,7 +263,6 @@ class EoapProcess(Process):
 
     @classmethod
     def _generate_model_class(cls, cwl: dict, entrypoint: str) -> type[BaseModel]:
-<<<<<<< HEAD
         """Generate pydantic Model Class for Workflow/Process Inputs
 
         The generated pydantic model can be used to validated user inputs
@@ -287,23 +277,15 @@ class EoapProcess(Process):
         Returns:
             type[BaseModel]: Dynamically created process model.
         """
-        process_entry_node: dict = cls._find_entrypoint(cwl, entrypoint)
-=======
         process_entry_node: parser.Workflow = cls._find_entrypoint(cwl, entrypoint)
->>>>>>> typechecking
 
         return cwl_inputs_to_model_class(process_entry_node.inputs)
 
     @classmethod
-<<<<<<< HEAD
-    def _find_entrypoint(cls, cwl_dict: dict, w: str | None = None) -> Dict:
+    def _find_entrypoint(cls, cwl_dict: dict, w: str | None = None) -> parser.Workflow:
         """Extract Workflow Entrypoint
 
         Extract either the Workflow instance with the id tag given by `w` or,
-=======
-    def _find_entrypoint(cls, cwl_dict: dict, w: str | None = None) -> parser.Workflow:
-        """Extract either the Workflow instance with the id tag given by `w` or,
->>>>>>> typechecking
         if the paramter is None, the first instance of a Workflow object.
 
         Args:

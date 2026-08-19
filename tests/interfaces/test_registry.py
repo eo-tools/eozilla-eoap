@@ -21,4 +21,6 @@ class RegistryInterfaceTest(TestCase):
         registry_abstract_methods: frozenset = Registry.__abstractmethods__
 
         for method in registry_abstract_methods:
+            if str(method).startswith("__"):
+                continue # skip magick methods from Mapping
             self.assertTrue(method in REGISTRY_EXPECTED_METHODS)

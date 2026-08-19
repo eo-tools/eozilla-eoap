@@ -700,7 +700,7 @@ class LocalArtifactManagerTest(TestCase):
 
             self.assertEqual(len(manager.staged_out_files), 1)
             self.assertIn(
-                patched_fp, [str(x) for x in manager.staged_out_files.values()]
+                Path(patched_fp), itertools.chain.from_iterable(manager.staged_out_files.values())
             )
 
         temporary_output_file.close()
@@ -741,7 +741,7 @@ class LocalArtifactManagerTest(TestCase):
 
             self.assertEqual(len(manager.staged_out_files), 1)
             self.assertIn(
-                patched_fp, [str(x) for x in manager.staged_out_files.values()]
+                Path(patched_fp), itertools.chain.from_iterable(manager.staged_out_files.values())
             )
 
         temporary_output_file.close()
