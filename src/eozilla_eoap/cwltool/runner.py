@@ -251,8 +251,6 @@ class CwlToolRunner(Runner):
                     #       on page 24
                     "strict_memory_limit": False,
                     "strict_cpu_limit": True,
-                    "default_stdout": proc_stdout,
-                    "default_stderr": proc_stderr,
                 }
             )
 
