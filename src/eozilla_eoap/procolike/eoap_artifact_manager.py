@@ -589,7 +589,7 @@ def _(stac_obj: Catalog) -> Catalog:
         Catalog: Local path to staged-in STAC Catalog.
     """
     raise RuntimeWarning(
-        "Using a catlog seems unreasonable, may be deprecated in the future."
+        "Using a catlog seems unreasonable, disallowed."
     )
 
     out_dir = TemporaryDirectory(prefix="cwl-input-staging-", delete=False).name
