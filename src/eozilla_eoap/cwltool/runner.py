@@ -8,7 +8,7 @@ from cwl_utils.types import CWLObjectType
 from cwltool.context import RuntimeContext
 from cwltool.errors import WorkflowException
 from cwltool.executors import SingleJobExecutor
-from cwltool.factory import Factory
+from cwltool.factory import Factory, Callable as CwlCallable
 from cwltool.process import Process
 from cwltool.utils import JobsGeneratorType, JobsType, OutputCallbackType
 from procodile.job import JobCancelledException, NullJobContext
@@ -164,12 +164,9 @@ class CallbackExecutor(SingleJobExecutor):
                 tmpdir_lock (Union[threading.Lock, None]): Lock to serialize access
                     to local temporary directory.
             """
-            try:
-                self.context.check_cancelled()
-                # call non-local, original, run method
-                return original(runtime_context, tmpdir_lock)
-            finally:
-                self.context.check_cancelled()
+            self.context.check_cancelled()
+            # call non-local, original, run method
+            return original(runtime_context, tmpdir_lock)
 
         # overwrite *public* run method called by Exectuor
         # within the stack frame(?) of the newly registered `wrapped_job` function, we still
@@ -251,7 +248,11 @@ class CwlToolRunner(Runner):
             runtime_context: RuntimeContext = RuntimeContext(
                 {
                     "outdir": str(out_dir),
-                    "strict_memory_limit": True,
+                    # NOTE: Setting strict memory limit to false to allow processes to simply not specify resource
+                    #       requirements and still function when using more than one Gb of RAM.
+                    #       Relevant section in https://cwltool.readthedocs.io/_/downloads/en/stable/pdf/ is
+                    #       on page 24
+                    "strict_memory_limit": False,
                     "strict_cpu_limit": True,
                     "default_stdout": proc_stdout,
                     "default_stderr": proc_stderr,
@@ -263,22 +264,20 @@ class CwlToolRunner(Runner):
                 runtime_context=runtime_context,
             )
 
-            workflow: Callable = factory.make(
+            workflow: CwlCallable = factory.make(
                 process.source + "#" + process.description.id
             )
 
             try:
                 workflow_result: Any = workflow(**process_arguments)
             except WorkflowException as e:
-                # NOTE: not attempting cleanup; this occurs on 2nd
-                #       dismissmal that equals cleanup
+                # cwltool wraps any unknown error into WorkflowException,
+                # this is why I need to check the context explicitly
                 if context.is_cancelled():
                     raise JobCancelledException from e
                 else:
-                    raise Exception from e
-            except JobCancelledException:
-                raise
-            except Exception:
+                    raise e
+            except Exception as e:
                 raise
 
         return workflow_result

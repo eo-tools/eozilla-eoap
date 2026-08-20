@@ -24,15 +24,12 @@ from gavicore.models import (
     Subscriber,
 )
 from procodile.reporter import CallbackReporter
+from procodile.job import JobCancelledException
 
 from eozilla_eoap.interfaces.runner import Runner
 
 from .eoap_artifact_manager import LocalArtifactManager
 from .eoap_process import EoapProcess
-
-
-class JobCancelledException(Exception):
-    """Raised if a job's cancellation has been requested."""
 
 
 class JobContext(ABC):
@@ -293,9 +290,11 @@ class Job(JobContext):
             self._maybe_notify_success(job_results)
             return job_results
         except JobCancelledException:
+            self.artifact_manager.stage_out_logs()
             self._finish_job(JobStatus.dismissed)
             self._maybe_notify_failed()
         except Exception as e:
+            self.artifact_manager.stage_out_logs()
             self._finish_job(JobStatus.failed, exception=e)
             self._maybe_notify_failed()
         finally:

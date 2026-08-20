@@ -183,7 +183,7 @@ class RunnerTest(TestCase):
         self.mock_runtime_context_class.assert_called_once_with(
             {
                 "outdir": str(Path(temporary_output_directory, "out")),
-                "strict_memory_limit": True,
+                "strict_memory_limit": False,
                 "strict_cpu_limit": True,
                 "default_stdout": mocked_open(),
                 "default_stderr": mocked_open(),
@@ -244,7 +244,7 @@ class RunnerTest(TestCase):
         self.mock_runtime_context_class.assert_called_once_with(
             {
                 "outdir": str(Path(temporary_output_directory, "out")),
-                "strict_memory_limit": True,
+                "strict_memory_limit": False,
                 "strict_cpu_limit": True,
                 "default_stdout": mocked_open(),
                 "default_stderr": mocked_open(),
@@ -303,7 +303,7 @@ class RunnerTest(TestCase):
         self.mock_runtime_context_class.assert_called_once_with(
             {
                 "outdir": str(Path(temporary_output_directory, "out")),
-                "strict_memory_limit": True,
+                "strict_memory_limit": False,
                 "strict_cpu_limit": True,
                 "default_stdout": mocked_open(),
                 "default_stderr": mocked_open(),
@@ -360,7 +360,7 @@ class RunnerTest(TestCase):
         self.mock_runtime_context_class.assert_called_once_with(
             {
                 "outdir": str(Path(temporary_output_directory, "out")),
-                "strict_memory_limit": True,
+                "strict_memory_limit": False,
                 "strict_cpu_limit": True,
                 "default_stdout": mocked_open(),
                 "default_stderr": mocked_open(),
@@ -417,7 +417,7 @@ class RunnerTest(TestCase):
         self.mock_runtime_context_class.assert_called_once_with(
             {
                 "outdir": str(Path(temporary_output_directory, "out")),
-                "strict_memory_limit": True,
+                "strict_memory_limit": False,
                 "strict_cpu_limit": True,
                 "default_stdout": mocked_open(),
                 "default_stderr": mocked_open(),
@@ -477,7 +477,7 @@ class RunnerTest(TestCase):
         self.mock_runtime_context_class.assert_called_once_with(
             {
                 "outdir": str(Path(temporary_output_directory, "out")),
-                "strict_memory_limit": True,
+                "strict_memory_limit": False,
                 "strict_cpu_limit": True,
                 "default_stdout": mocked_open(),
                 "default_stderr": mocked_open(),
@@ -542,7 +542,7 @@ class RunnerTest(TestCase):
         self.mock_runtime_context_class.assert_called_once_with(
             {
                 "outdir": str(Path(temporary_output_directory, "out")),
-                "strict_memory_limit": True,
+                "strict_memory_limit": False,
                 "strict_cpu_limit": True,
                 "default_stdout": mocked_open(),
                 "default_stderr": mocked_open(),

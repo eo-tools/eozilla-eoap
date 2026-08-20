@@ -3,10 +3,10 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 
 from gavicore.models import JobResults, JobStatus, ProcessRequest
+from procodile.job import JobCancelledException
 
 from eozilla_eoap.interfaces import Runner
 from eozilla_eoap.procolike import EoapProcess, Job
-from eozilla_eoap.procolike.eoap_job import JobCancelledException
 
 ECHO_WORKFLOW_DEFINITION = {
     "$graph": [
