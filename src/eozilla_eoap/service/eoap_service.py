@@ -334,9 +334,7 @@ class LocalEoapService(ServiceBase, DruService):
             version=process.description.version,
             mutable=process.description.mutable,
             links=[
-                self.get_self_link(
-                    request, "replace_process", processId=process_id, w=w
-                )
+                self.get_self_link(request, "replace_process", processId=process_id)
             ],
         )
 
