@@ -192,7 +192,6 @@ $graph:
       inputBinding:
         position: 0
         prefix: '--inputs'
-        itemSeparator: ' '
   outputs:
     stac_output:
       type: Directory
