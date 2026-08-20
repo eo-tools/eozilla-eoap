@@ -588,9 +588,7 @@ def _(stac_obj: Catalog) -> Catalog:
     Returns:
         Catalog: Local path to staged-in STAC Catalog.
     """
-    raise RuntimeWarning(
-        "Using a catlog seems unreasonable, disallowed."
-    )
+    raise RuntimeWarning("Using a catlog seems unreasonable, disallowed.")
 
     out_dir = TemporaryDirectory(prefix="cwl-input-staging-", delete=False).name
 
@@ -700,7 +698,7 @@ def _load_remote_stac_from_http_url(path: str) -> ItemCollection | Catalog | Ite
             ) from None
 
 
-def _load_local_stac_from_cwl_output(path: str) -> ItemCollection | Catalog | Item:
+def _load_local_stac_from_cwl_output(path: str) -> Catalog:
     """Read STAC Object from Local Location.
 
     Notes:
@@ -713,29 +711,30 @@ def _load_local_stac_from_cwl_output(path: str) -> ItemCollection | Catalog | It
     Raises:
         ValidationError: Raised in case the supplied URL does not match
             pydantic's FileUrl-scheme.
+        RuntimeError: Raied in case there's no file called 'catalog.json'.
         ValueError: Raised in case the supplied URL does not point to
-            a STAC ItemCollection, STAC Catalog or STAC Item.
+            a STAC Catalog.
 
     Returns:
         ItemCollection | Catalog | Item: In-memory representation of STAC object.
     """
-    # TODO: actually, only allow STAC Catalogs, no other outputs.
     validated_url: FileUrl = FileUrl(path + "/catalog.json")
     parsed_path: str = url2pathname(str(validated_url), require_scheme=True)
 
+    if not Path(parsed_path).exists():
+        raise RuntimeError(
+            f"{parsed_path} does not point to an existing STAC Catalog, outputs must be named 'catalog.json'."
+        )
+
     try:
         generic_stac_obj: STACObject = STACObject.from_file(parsed_path)
-    except pystac.errors.STACTypeError:
-        return ItemCollection.from_file(parsed_path)
+    except pystac.errors.STACTypeError as e:
+        raise ValueError("EO Output must be a STAC Catalog.") from e
     else:
-        if generic_stac_obj.STAC_OBJECT_TYPE == "Catalog":
-            return Catalog.from_dict(generic_stac_obj.to_dict())
-        elif generic_stac_obj.STAC_OBJECT_TYPE == "Feature":
-            return Item.from_dict(generic_stac_obj.to_dict())
-        else:
-            raise ValueError(
-                f"Supplied STAC type ('{generic_stac_obj.STAC_OBJECT_TYPE}') not supported."
-            ) from None
+        if generic_stac_obj.STAC_OBJECT_TYPE != "Catalog":
+            raise ValueError("EO Output must be a STAC Catalog.") from e
+
+        return Catalog.from_dict(generic_stac_obj.to_dict())
 
 
 def _wolfgang_beltracchi(
