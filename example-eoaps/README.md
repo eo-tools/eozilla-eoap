@@ -33,3 +33,9 @@ The cat EOAP is a simple process that cat the contents of a user-supplied file t
 > The workflow definition is licensed under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Changes compared to the original source include re-definition of input parameters denoting STAC catalogs to be of type `Directory` as well as changing the version key from `softwareVersion` to `version`.
 
 The water bodies/OTSU workflow is process that generates a water mask by using the OTSU thresholding image processing technique. The EOAP is based on the workflow provided in the Quickwin Github repository (https://github.com/eoap/quickwin), see also their accompanying documentation at https://eoap.github.io/quickwin/. By registering the accompanying CWL workflow, the process will be available at `/processes/otsu-workflow`.
+
+## K-Means Clustering EOAP
+
+This workflow takes a STAC item or STAC item collection as input, creates multi-band stacks according to the specified `band_list` argument, creates k-means clustering results independently and renders previews of the results as well as some non-sensical statistics summary. It's main goal is not to implement a sophisticated or novel processing but rather illustrate how multi-step EOAP may be defined (and to that extent test process cancellation). Note, that the server implementation present only interacts with the entrypoint apart from validating presence of some fields.
+
+By registering the accompanying [CWL workflow](./kmeans/kmeans-workflow.cwl), the process will be available at `/processes/kmeans-workflow`.
