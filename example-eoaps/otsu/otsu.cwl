@@ -54,7 +54,6 @@ $graph:
       ResourceRequirement:
         coresMax: 1
         ramMax: 512
-    hints:
       DockerRequirement:
         dockerPull: ghcr.io/eoap/quickwin/detect-water-body@sha256:2c2c8749126bb8bc5cdc67347590232c51d2d4e8a82fae5b1a4fc47793648ff0
     baseCommand: ["python", "-m", "app"]
