@@ -63,7 +63,7 @@ class LocalEoapService(ServiceBase, DruService):
         conforms_to: Optional[List[str]] = None,
     ):
         super().__init__(title=title, description=description, conforms_to=conforms_to)
-        # TODO: Doesn't the executor become more of a "submitter" in my case?
+        # Doesn't the executor become more of a "submitter" in my case? -> Yes, but that's Wortklauberei in this case
         self.executor: Optional[ThreadPoolExecutor | ProcessPoolExecutor] = None
         self.cwl_runner: Runner = cwl_runner
         self.persitency_directory: Path = persitency_directory
@@ -193,9 +193,6 @@ class LocalEoapService(ServiceBase, DruService):
         return job.job_info
 
     async def dismiss_job(self, job_id: str, *args, **kwargs) -> JobInfo:
-        # TODO: same question as in the original eozilla repository:
-        #       how to correctly dismiss a (running) job and how to wait
-        #       for its termination?!
         job = self._get_job(job_id, forbidden_status_codes={})
         if job.job_info.status in (JobStatus.accepted, JobStatus.running):
             job.cancel()

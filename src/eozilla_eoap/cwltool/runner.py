@@ -187,9 +187,6 @@ class CwlToolRunner(Runner):
         # only passing in a temporary directory decouples the CWL implementation
         # from other parts of the software
         temporary_output_directory: Path,
-        # Question: Does the line below invert the owenership relation?
-        #           Though, the original
-        # TODO: Set NullJobContext on missing!
         context: Optional[Job] = None,
         **kwargs,
     ) -> Dict[str, Any]:

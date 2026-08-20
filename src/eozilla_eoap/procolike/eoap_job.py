@@ -2,10 +2,6 @@
 #  Permissions are hereby granted under the terms of the Apache 2.0 License:
 #  https://opensource.org/license/apache-2-0.
 
-# TODO: An abstraction of the executor would be nice as well but maybe this is better suited to be used in `eoap_service.py`? At least in the
-#       real eozilla repo, this is where the job is acually submitted and I agree that submission of a job shouldn't really be the responsibility
-#       of the job to submit itself to another entity
-
 import datetime
 import inspect
 import traceback
@@ -111,9 +107,6 @@ class JobContext(ABC):
 
 
 class Job(JobContext):
-    # TODO: I would say the job still belongs to the "platform", thus the job context
-    #       would be appropriate to be responsible for stage-in and stage-out of data
-    #       even though this isn't really needed in my case
     """
     Represents an execution of a CWL.
 
@@ -280,12 +273,6 @@ class Job(JobContext):
             )
             results = self.artifact_manager.stage_out(results)
             self._finish_job(JobStatus.successful)
-            # TODO: Similarly to the LocalEOAPService method `get_job_results`,
-            #       this would be responsible for stage-out/directory creation.
-            #       It doesn't seem like I need a new model; JobResults should be generic
-            #       enough.
-            #       Same as with the OGC Process: This is only a representation of the
-            #       outputs as far as I'm concerned as the actual output lives on disk.
             job_results = self._get_job_results(results)
             self._maybe_notify_success(job_results)
             return job_results
