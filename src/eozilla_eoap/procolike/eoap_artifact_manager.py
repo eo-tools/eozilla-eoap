@@ -486,9 +486,7 @@ def _iteratively_stage_in_files(
                     return_mapping[tag] = [
                         Path(
                             _dispatch_singular_file_download(
-                                _string_to_url_class(
-                                    x.path
-                                )  # FIXME: here and elsewhere: it's not guarantueed that the path variable is set; how do I guard against that?
+                                _string_to_url_class(x.location or x.path)
                             )
                         )
                         for x in potential_file
@@ -507,7 +505,9 @@ def _iteratively_stage_in_files(
                     return_mapping[tag] = [
                         Path(
                             _dispatch_singular_file_download(
-                                _string_to_url_class(potential_file.path)
+                                _string_to_url_class(
+                                    potential_file.location or potential_file.path
+                                )
                             )
                         ),
                     ]
@@ -521,7 +521,9 @@ def _iteratively_stage_in_files(
             f: File = model.__dict__[tag]
             return_mapping[tag] = [
                 Path(
-                    _dispatch_singular_file_download(_string_to_url_class(f.path)),
+                    _dispatch_singular_file_download(
+                        _string_to_url_class(f.location or f.path)
+                    ),
                 )
             ]
 
@@ -732,7 +734,7 @@ def _load_local_stac_from_cwl_output(path: str) -> Catalog:
         raise ValueError("EO Output must be a STAC Catalog.") from e
     else:
         if generic_stac_obj.STAC_OBJECT_TYPE != "Catalog":
-            raise ValueError("EO Output must be a STAC Catalog.") from e
+            raise ValueError("EO Output must be a STAC Catalog.")
 
         return Catalog.from_dict(generic_stac_obj.to_dict())
 
@@ -886,7 +888,7 @@ def _iteratively_stage_in_directories(
                     return_mapping[tag] = [
                         _get_local_catalog_base_directory(
                             _dispatch_stac_resolving(
-                                _load_remote_stac_from_http_url(x.path)
+                                _load_remote_stac_from_http_url(x.location or x.path)
                             )
                         )
                         for x in potential_directory
@@ -906,7 +908,8 @@ def _iteratively_stage_in_directories(
                         _get_local_catalog_base_directory(
                             _dispatch_stac_resolving(
                                 _load_remote_stac_from_http_url(
-                                    potential_directory.path
+                                    potential_directory.location
+                                    or potential_directory.path
                                 )
                             )
                         ),
@@ -921,7 +924,9 @@ def _iteratively_stage_in_directories(
             d: File = model.__dict__[tag]
             return_mapping[tag] = [
                 _get_local_catalog_base_directory(
-                    _dispatch_stac_resolving(_load_remote_stac_from_http_url(d.path))
+                    _dispatch_stac_resolving(
+                        _load_remote_stac_from_http_url(d.location or d.path)
+                    )
                 ),
             ]
 
