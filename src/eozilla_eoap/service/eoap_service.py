@@ -254,7 +254,7 @@ class LocalEoapService(ServiceBase, DruService):
 
         try:
             process: EoapProcess = self.process_registry.create(
-                eoap, entrypoint=w, ignore_existing=False
+                eoap, entrypoint=w
             )
         except RuntimeError as e:
             raise ServiceException(

@@ -60,14 +60,10 @@ class LocalEaopRegistry(Registry):
 
         return
 
-    def create(
-        self, contents: dict, entrypoint: str, ignore_existing: bool = False
-    ) -> EoapProcess:
+    def create(self, contents: dict, entrypoint: str) -> EoapProcess:
         new_eoap: EoapProcess = EoapProcess.create(self.path, contents, entrypoint)
-
         # after EoapProcess.create, id and entrypoint are identical
         # but using the id field seems a bit clearer
-        cwl_path: Path = Path(url2pathname(new_eoap.source, require_scheme=True))
 
         # assume that all processes stored as files are also present in the internal mapping
         exisiting_process: EoapProcess | None = self._eoaps.get(new_eoap.description.id)
@@ -75,10 +71,13 @@ class LocalEaopRegistry(Registry):
 
         if process_exists and not exisiting_process.description.mutable:  # type: ignore[union-attr]
             raise RuntimeError(f"{new_eoap.description.id} is immutable")
-        if process_exists and not ignore_existing:
+
+        if process_exists:
             raise KeyError(
                 f"{new_eoap.description.id} already references an exisiting EOAP in the registry."
             )
+
+        cwl_path: Path = Path(url2pathname(new_eoap.source, require_scheme=True))
 
         self._eoaps[new_eoap.description.id] = new_eoap
 
@@ -93,25 +92,50 @@ class LocalEaopRegistry(Registry):
 
         return new_eoap
 
-    def read(self, name: str) -> EoapProcess:
+    def read(self, process_id: str) -> EoapProcess:
         """See [`Registry.read`][eozilla_eoap.interfaces.Registry]"""
-        return self._eoaps[name]
+        return self._eoaps[process_id]
 
     def read_all(self) -> Mapping[str, EoapProcess]:
         """See [`Registry.read_all`][eozilla_eoap.interfaces.Registry]"""
         return self._eoaps
 
-    def update(self, contents: dict, entrypoint: str) -> EoapProcess:
+    def update(self, process_id: str, contents: dict, entrypoint: str) -> EoapProcess:
         """See [`Registry.update`][eozilla_eoap.interfaces.Registry]"""
-        return self.create(
-            contents=contents, entrypoint=entrypoint, ignore_existing=True
-        )
+        existing_process: EoapProcess | None = self._eoaps.get(process_id)
+        new_eoap: EoapProcess = EoapProcess.create(self.path, contents, entrypoint)
+        # after EoapProcess.create, id and entrypoint are identical
+        # but using the id field seems a bit clearer
 
-    def delete(self, name: str) -> None:
+        if existing_process is None and process_id == new_eoap.description.id:
+            # upsert resulting in process named identically to the one the user requested
+            # upsert is a bit more "expensive" because reading internal mapping is accessed twice
+            return self.create(contents=contents, entrypoint=entrypoint)
+
+        assert process_id == existing_process.description.id, "Creation of EoapProcess potentially changed, expected process Ids to be identical."
+
+        if process_id != new_eoap.description.id:
+            raise ValueError(f"Replacement would touch process {new_eoap.description.id} but the request is for {process_id}.")
+
+        if not exisiting_process.description.mutable:
+            raise RuntimeError(f"{new_eoap.description.id} is immutable")
+
+        cwl_path: Path = Path(url2pathname(new_eoap.source, require_scheme=True))
+
+        self._eoaps[new_eoap.description.id] = new_eoap
+
+        with open(cwl_path, "wt") as cwl_document:
+            yaml.safe_dump(contents, cwl_document)
+
+        # NOTE: Not touching the local `process-mapping.csv` since id, entrypoint and file path are identical
+
+        return new_eoap
+
+    def delete(self, process_id: str) -> None:
         """See [`Registry.delete`][eozilla_eoap.interfaces.Registry]"""
-        cwl_path: Path = self.path / Path(name + ".cwl")
+        cwl_path: Path = self.path / Path(process_id + ".cwl")
 
-        if not cwl_path.exists() or name not in self._eoaps:
+        if not cwl_path.exists() or process_id not in self._eoaps:
             raise KeyError(
                 f"{cwl_path} does not reference an existing EOAP that can be deleted."
             )
@@ -120,7 +144,7 @@ class LocalEaopRegistry(Registry):
 
         with open(self.registry_mapping, "r+t") as f:
             rows = list(DictReader(f))
-            rows = [row for row in rows if row["process-id"] != name]
+            rows = [row for row in rows if row["process-id"] != process_id]
 
             f.seek(0)
 
@@ -130,7 +154,7 @@ class LocalEaopRegistry(Registry):
 
             f.truncate()
 
-        del self._eoaps[name]
+        del self._eoaps[process_id]
 
         return
 

@@ -71,7 +71,7 @@ class Registry(Mapping[str, Process], ABC):
         """
 
     @abstractmethod
-    def update(self, *args, **kwargs) -> Process:
+    def update(self, id: str, *args, **kwargs) -> Process:
         """Replace a process in the registry.
 
         Raises:
