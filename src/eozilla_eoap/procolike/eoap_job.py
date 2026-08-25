@@ -113,10 +113,6 @@ class Job(JobContext):
     Args:
         process: The process that created this job.
         job_id: A job identifier.
-        eoap_args: The user CWL's keyword arguments.
-            A keyword must be a valid Python identifier or a
-            sequence of Python identifiers separated by the dot
-            (`.`) character.
         subscriber: Optional subscriber URIs.
     """
 
@@ -156,10 +152,6 @@ class Job(JobContext):
             input_params, extra="forbid"
         )
 
-        eoap_args = model_instance.model_dump(
-            mode="python", exclude_unset=False, exclude_none=True
-        )
-
         artifact_manager: LocalArtifactManager = LocalArtifactManager(
             persistency_directory, job_id, model_instance
         )
@@ -167,7 +159,6 @@ class Job(JobContext):
         return Job(
             process=process,
             job_id=job_id,
-            eoap_args=eoap_args,
             cwl_runner=cwl_runner,
             subscriber=request.subscriber,
             artifact_manager=artifact_manager,
@@ -178,7 +169,6 @@ class Job(JobContext):
         *,
         process: EoapProcess,
         job_id: str,
-        eoap_args: dict[str, Any],
         cwl_runner: Runner,
         subscriber: Optional[Subscriber] = None,
         artifact_manager: Optional[LocalArtifactManager] = None,
@@ -194,7 +184,6 @@ class Job(JobContext):
             status=JobStatus.accepted,
             created=self._now(),
         )
-        self.eoap_args = eoap_args
         self.cancelled = False
         self.future: Optional[Future] = None
         self.subscriber = subscriber
@@ -259,16 +248,12 @@ class Job(JobContext):
         try:
             self.artifact_manager.initialize()
             self.artifact_manager.stage_in()
-            self.eoap_args = self.artifact_manager.rebuild_process_arguments()
             self.check_cancelled()
-            # TODO: Is it possible/desirable to dispatch run method (self.cwl_runner.run)
-            #       on Process vs. EoapProcess? Could possibly allow multiple "things"
-            #       to co-exist
             results = self.cwl_runner.run(
                 self.job_info.jobID,
                 context=ctx,
                 process=self.process,
-                process_arguments=self.eoap_args,
+                process_arguments=self.artifact_manager.rebuild_process_arguments(),
                 temporary_output_directory=self.artifact_manager.temporary_output_directory,
             )
             results = self.artifact_manager.stage_out(results)
