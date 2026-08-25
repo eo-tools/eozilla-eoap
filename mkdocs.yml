@@ -14,6 +14,7 @@ nav:
   - Service:
     - Overview: service/index.md
     - Api Reference: service/api.md
+    - Example EOAPs: service/examples.md
   - Procolike:
     - Overview: procolike/index.md
     - Api Reference: procolike/api.md

@@ -1,13 +1,14 @@
 # Example Earth Observation Application Packages (EOAPs)
 
-This directory contains resources necessary to deploy example EOAP processes.
+!!! important
+    The files referenced when deploying processes reference those in the `example-eoaps` directory located at the root of this repository ([https://github.com/eo-tools/eozilla-eoap](https://github.com/eo-tools/eozilla-eoap)). Alternatiely, you can follow the hyperlinks referencing the CWL workflows below.
 
 ## Sleep EOAP
 
-> [!NOTE]
-> This example was copied and slightly adapted from eozilla's local test service implementation and can be found [under this URL](https://github.com/eo-tools/eozilla/blob/main/wraptile/src/wraptile/services/local/testing.py).
+!!! note 
+    This example was copied and slightly adapted from eozilla's local test service implementation and can be found [under this URL](https://github.com/eo-tools/eozilla/blob/main/wraptile/src/wraptile/services/local/testing.py).
 
-The sleep EOAP is a simple process that calls a Python function that sleeps for a given amount of time. By registering the accompanying [CWL workflow](./sleep/sleep-workflow.cwl), the process will be available at `/processes/sleep-workflow`.
+The sleep EOAP is a simple process that calls a Python function that sleeps for a given amount of time. By registering the accompanying [CWL workflow](https://raw.githubusercontent.com/eo-tools/eozilla-eoap/refs/heads/main/example-eoaps/sleep/sleep-workflow.cwl), the process will be available at `/processes/sleep-workflow`.
 
 ### Deploy and Execute Example
 
@@ -37,10 +38,10 @@ curl -X 'POST' \
 
 ## Pimes EOAP
 
-> [!NOTE]
-> This example was copied and slightly adapted from eozilla's local test service implementation and can be found [under this URL](https://github.com/eo-tools/eozilla/blob/main/wraptile/src/wraptile/services/local/testing.py).
+!!! note
+    This example was copied and slightly adapted from eozilla's local test service implementation and can be found [under this URL](https://github.com/eo-tools/eozilla/blob/main/wraptile/src/wraptile/services/local/testing.py).
 
-The primes EOAP is a simple process that calculates prime numbers between a lower and an upper bound. By registering the accompanying [CWL workflow](./primes/primes-workflow.cwl), the process will be available at `/processes/primes-workflow`.
+The primes EOAP is a simple process that calculates prime numbers between a lower and an upper bound. By registering the accompanying [CWL workflow](https://raw.githubusercontent.com/eo-tools/eozilla-eoap/refs/heads/main/example-eoaps/primes/primes-workflow.cwl), the process will be available at `/processes/primes-workflow`.
 
 ### Deploy and Execute Example
 
@@ -71,7 +72,7 @@ curl -X 'POST' \
 
 ## Echo EOAP
 
-The echo EOAP is a simple process that simply echos the user's input to a files and returns it. By registering the accompanying [CWL workflow](./echo/echo-workflow.cwl), the process will be available at `/processes/echo-workflow`.
+The echo EOAP is a simple process that simply echos the user's input to a files and returns it. By registering the accompanying [CWL workflow](https://raw.githubusercontent.com/eo-tools/eozilla-eoap/refs/heads/main/example-eoaps/echo/echo-workflow.cwl), the process will be available at `/processes/echo-workflow`.
 
 ### Deploy and Execute Example
 
@@ -101,10 +102,10 @@ curl -X 'POST' \
 
 ## Cat EOAP
 
-> [!IMPORTANT]
-> As the file's content is loaded directly, the maximum allowed size is 65536 bytes. The workflow will error out without a specific reason supplied to the user.
+!!! important
+    As the file's content is loaded directly, the maximum allowed size is 65536 bytes. The workflow will error out without a specific reason supplied to the user.
 
-The cat EOAP is a simple process that cat the contents of a user-supplied file to stdout. By registering the accompanying CWL workflow, the process will be available at `/processes/cat-workflow`.
+The cat EOAP is a simple process that cat the contents of a user-supplied file to stdout. By registering the accompanying [CWL workflow](https://raw.githubusercontent.com/eo-tools/eozilla-eoap/refs/heads/main/example-eoaps/cat/cat-workflow.cwl), the process will be available at `/processes/cat-workflow`.
 
 ### Deploy and Execute Example
 
@@ -134,8 +135,8 @@ curl -X 'POST' \
 
 ## OTSU EOAP
 
-> [!NOTE]
-> The workflow definition is licensed under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Changes compared to the original source include re-definition of input parameters denoting STAC catalogs to be of type `Directory` as well as changing the version key from `softwareVersion` to `version`.
+!!! note 
+    The workflow definition is licensed under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Changes compared to the original source include re-definition of input parameters denoting STAC catalogs to be of type `Directory` as well as changing the version key from `softwareVersion` to `version`.
 
 The water bodies/OTSU workflow is process that generates a water mask by using the OTSU thresholding image processing technique. The EOAP is based on the workflow provided in the Quickwin Github repository (https://github.com/eoap/quickwin), see also their accompanying documentation at https://eoap.github.io/quickwin/. By registering the accompanying CWL workflow, the process will be available at `/processes/otsu-workflow`.
 
@@ -171,7 +172,7 @@ curl -X 'POST' \
 
 This workflow takes a STAC item or STAC item collection as input, creates multi-band stacks according to the specified `band_list` argument, creates k-means clustering results independently and renders previews of the results as well as some non-sensical statistics summary. It's main goal is not to implement a sophisticated or novel processing but rather illustrate how multi-step EOAP may be defined (and to that extent test process cancellation). Note, that the server implementation present only interacts with the entrypoint apart from validating presence of some fields.
 
-By registering the accompanying [CWL workflow](./kmeans/kmeans-workflow.cwl), the process will be available at `/processes/kmeans-workflow`.
+By registering the accompanying [CWL workflow](https://raw.githubusercontent.com/eo-tools/eozilla-eoap/refs/heads/main/example-eoaps/kmeans/kmeans-workflow.cwl), the process will be available at `/processes/kmeans-workflow`.
 
 ### Deploy and Execute Example
 
