@@ -11,7 +11,7 @@ The "OGC API - Processes - Part 2: Deploy, Replace, Undeploy" draft specificatio
 | /processes/{processID}         | n/a             | n/a    | replace | undeploy |
 | /processes/{processID}/package | package         | n/a    | n/a     | n/a      |
 
-The draft specification defines three conformance classes for deploying and replacing processes (OGC Application Package, Docker, CWL) that are not mandatory to support by a conforming implementation. As such, only CWL documents are accepted by this Eozilla implementation with the caveat of not supporting multi-part HTTP requests that would allow a client to submit multiple related CWL documents in a single rqeuest. Instead, only so-called packed CWL documents are supported; these are standalone documents where all workflow and tool definitions are inlined. For a detailed overview of other restrictions, see the [Restrictions](/restrictions) page.
+The draft specification defines three conformance classes for deploying and replacing processes (OGC Application Package, Docker, CWL) that are not mandatory to support by a conforming implementation. As such, only CWL documents are accepted by this Eozilla implementation with the caveat of not supporting multi-part HTTP requests that would allow a client to submit multiple related CWL documents in a single request. Instead, only so-called packed CWL documents are supported; these are standalone documents where all workflow and tool definitions are inlined. For a detailed overview of other restrictions, see the [Restrictions](/restrictions) page.
 
 ## OGC Best Practice for Earth Observation Application Package
 
