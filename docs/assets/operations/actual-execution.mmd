@@ -1,0 +1,46 @@
+sequenceDiagram
+    participant E as concurrent.future.*PoolExecutor
+    participant J as Job
+    participant AM as LocalArtifactManager
+    participant CTR as CwlToolRunner
+    participant CBE as CallbackExecutor
+    participant C as cwltool
+
+    E->>J: run()
+
+    J->>J: Prepare context
+
+    J->>AM: initialize()
+    AM->>AM: Create persistent and temporary directories
+    J->>AM: stage_in()
+    AM->>AM: Download remote files<br/>and STAC Items
+    J->>AM: rebuild_process_arguments()
+    AM->>AM: Replace remote references with local ones
+    AM-->>J: new argument dict
+    J->>CTR: run(jobId, ctx, EoapProcess,<br/>parsed arguments, temporary output directory)
+
+    CTR->>CTR: Set up runtime context
+    CTR->>C: factory.Factory.make(local URL)
+    C-->>CTR: CWL callable
+
+    CTR->>C: Callable(args)
+
+    loop Iterate over all job steps
+    C->>CBE: yield next job step
+    CBE->>CBE: Check context for cancellation
+    CBE-->>C: job step
+    C->>C: Execute
+    end
+
+    C-->>CTR: Workflow result dict
+
+    CTR-->>J: Workflow result dict
+
+    J->>AM: stage_out()
+
+    J->>J: _get_job_results()
+
+    J->>AM: remove_staged_inputs()
+    J->>AM: remove_temporary_outputs()
+
+    J-->>E: JobResults

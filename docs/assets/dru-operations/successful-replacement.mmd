@@ -1,0 +1,38 @@
+sequenceDiagram
+    actor Client
+    participant S as LocalEoapService
+    participant A as EOAP Acceptance
+    participant C as cwltool
+    participant R as LocalEaopRegistry
+    participant P as EoapProcess
+
+    Client->>S: POST /processes
+    S->>S: Check Content-Type
+    S->>A: load_and_validate_from_body(request)
+    A->>A: Load document from request body
+    A->>C: main(["--validate", "--strict", tmpfile])
+    C-->>A: Boolean
+    A->>A: Validate subset of EOAP requirements
+    A-->>S: validated CWL/EOAP dict
+
+    S->>R: update(eoap, entrypoint=w)
+    R->>R: try getting process with identical Id
+    R->>P: EoapProcess.create(...)
+    P->>P: Metadata extraction
+    P->>P: Entrypoint validation
+    P->>P: Convert entrypoint inputs/outputs to OGC schemas
+    P->>P: Convert entrypoint inputs to pydantic model
+    P-->>R: new EoapProcess
+
+    alt process id not existing and path parameter equal to extracted Id
+    R->>R: self.create(eoap, entrypoint=w)
+    else process id exisiting and path parameter equal to extracted Id
+    R->>R: Update internal _eoaps mapping
+    R->>R: Write <process-id>.cwl
+    else
+    R-->R: Raise Exception
+    end    
+
+    R-->>S: EoapProcess
+    S-->>Client: ProcessSummary
+    S-->>Client: Location: /processes/{id}

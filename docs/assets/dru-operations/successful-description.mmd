@@ -1,0 +1,13 @@
+sequenceDiagram
+    actor Client
+    participant S as LocalEoapService
+    participant R as LocalEoapRegistry
+
+    Client->>S: GET /processes/{processId}/package
+
+    S->>R: read(processId)
+    R-->>S: EoapProcess
+
+    S->>S: Check mutability
+
+    S-->>Client: OgcApplicationPackage

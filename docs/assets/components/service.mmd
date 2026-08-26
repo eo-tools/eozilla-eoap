@@ -1,0 +1,51 @@
+---
+config:
+    class:
+        hideEmptyMembersBox: true
+---
+classDiagram
+class LocalEoapService {
+
+}
+
+class ServiceBase {
+    +get_capabilities()
+    +get_conformance()
+    -get_self_link()
+    -get_link_type()
+    -get_url()
+    -load()
+    -configure()
+}
+
+class DruService {
+    +deploy_process()*
+    +replace_process()*
+    +undeploy_process()*
+    +get_formal_description()*
+}
+
+class Service {
+    +get_capabilities()*
+    +get_conformance()*
+    +get_process()*
+    +execute_process()*
+    +get_jobs()*
+    +get_job()*
+    +dismiss_job()*
+    +get_job_results()*
+}
+
+class ABC {
+
+}
+
+LocalEoapService ..|> ServiceBase
+LocalEoapService ..|> DruService
+
+ServiceBase --|> Service
+
+DruService --|> Service
+
+Service --|> ABC
+

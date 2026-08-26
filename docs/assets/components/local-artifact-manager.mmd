@@ -1,0 +1,29 @@
+classDiagram
+class LocalArtifactManager {
+    +base
+    +job_id
+    +process_instance_model
+    +persistent_output_directory
+    +temporary_output_directory
+    -staged_in_files
+    -staged_in_directories
+    -staged_out_files
+    -staged_out_directories
+
+    +initialize()
+    +stage_in()
+    +stage_in_files()
+    +stage_in_directories()
+    +rebuild_process_arguments() Dict[str, Any]
+    +stage_out() Dict[str, Any]
+    +stage_out_logs()
+    +stage_out_results() Dict[str, Any]
+    +remove_staged_inputs()
+    +remove_staged_in_files()
+    +remove_staged_in_directories()
+    +remove_temporary_outputs()
+    +remove_persistent_outputs()
+
+    -init(base, job_id, process_instance_model)
+    -delete()
+}

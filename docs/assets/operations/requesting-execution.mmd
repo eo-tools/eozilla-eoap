@@ -1,0 +1,24 @@
+sequenceDiagram
+    actor Client
+    participant S as LocalEoapService
+    participant R as LocalEaopRegistry
+    participant J as Job
+    participant AM as LocalArtifactManager
+    participant E as concurrent.future.*PoolExecutor
+
+    Client->>S: POST /processes/{processID}/execution
+    S->>R: read(processId)
+    R-->>S: EoapProcess
+    S->>S: Check mutability
+    S->>S: Generate unique job id
+    
+    S->>J: create(EoapProcess, request body, cwlRunner, jobId, persistency directory)
+    J->>J: Validate arguments against pydantic input model
+    J->>AM: LocalArtifactManager(persistency directory,<br/>jobId,validated model instance)
+    AM-->>J: artifact manager instance
+    J-->>S: Job
+
+    S->>E: submit(job.run)
+    S->>S: Add callback to future for<br/>signalling successful completen
+
+    S-->>Client: JobInfo

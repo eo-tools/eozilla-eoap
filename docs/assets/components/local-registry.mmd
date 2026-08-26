@@ -1,0 +1,11 @@
+flowchart TB
+    LER["LocalEaopRegistry"]
+    EP@{ shape: datastore, label: "EoapProcess mapping" }
+    FS@{ shape: cyl, label: "Registry directory"}
+    CSV@{ shape: document, label: "process-mapping.csv" }
+    CWL@{ shape: bow-rect, label: "*process-id*.cwl" }
+
+    LER --> EP
+    LER --> FS
+    FS --> CSV
+    FS --> CWL

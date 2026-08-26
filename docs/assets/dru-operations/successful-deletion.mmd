@@ -1,0 +1,19 @@
+sequenceDiagram
+    actor Client
+    participant S as LocalEoapService
+    participant R as LocalEoapRegistry
+
+    Client->>S: DELETE /processes/{processId}
+
+    S->>R: read(processId)
+    R-->>S: EoapProcess
+
+    S->>S: Check mutability
+    S->>R: delete(processId)
+
+    R->>R: Delete <process-id>.cwl
+    R->>R: Rewrite process-mapping.csv
+    R->>R: Remove _eoaps[processId]
+
+    R-->>S: success
+    S-->>Client: 204

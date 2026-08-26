@@ -1,0 +1,31 @@
+sequenceDiagram
+    actor Client
+    participant S as LocalEoapService
+    participant A as EOAP Artifact Manager
+    participant J as Job
+    participant E as ThreadPoolExecutor/<br/>ProcessPoolExecutor
+
+    Client->>S: DELETE /jobs/{jobId}
+    S->>S: Get job
+    alt Job is accepted or running
+        S->>J: cancel
+        J->>J: Set cancelled attribute to True
+        J-->>S: success
+        S->>E: cancel
+        S->>E: wait
+        loop Wait for future termination
+            E->>E: Poll status
+        end
+        E-->>S: (jobs done, jobs pending)
+    else Job is dismissed, failed or finished
+        S->>A: delete
+        A->>A: Remove staged-in files
+        A->>A: Remove staged-in directories
+        A->>A: Remove staged-out files
+        A->>A: Remove staged-out directories
+        A-->>S: success
+        S->>S: Remove job from internal mapping
+        S->>S: Remove job results form internal mapping
+        S->>S: Remove job from "executor" mapping
+    end
+    S-->>Client: JobInfo

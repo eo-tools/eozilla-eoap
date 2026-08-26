@@ -1,0 +1,52 @@
+---
+config:
+    layout: elk
+    elk:
+        nodePlacementStrategy: LINEAR_SEGMENTS
+    class:
+        hideEmptyMembersBox: true
+---
+classDiagram
+direction TB
+
+class LocalEoapService~Service, DRUService~
+
+class Registry {
+    <<interface>>
+}
+
+class Runner {
+    <<interface>>
+}
+
+class Process {
+    <<interface>>
+}
+
+class LocalEoapRegistry
+
+class EoapJob
+
+class EoapProcess
+
+class LocalArtifactManager
+
+class CwlToolRunner
+
+class EOAP
+
+CwlToolRunner ..|> Runner
+LocalEoapRegistry ..|> Registry
+EoapProcess ..|> Process
+
+LocalEoapService --> "1" Registry: deploy/replace/undeploy
+LocalEoapService *--> "0..*" EoapJob: manages
+LocalEoapService --> "1" Runner: owns
+
+Registry --> "0..*" Process: manages
+
+EoapProcess ..> "1" EOAP: derived from
+
+EoapJob *--> "1" LocalArtifactManager: uses
+EoapJob --> "1" EoapProcess : executes
+EoapJob ..> "1" Runner: dispatches to
