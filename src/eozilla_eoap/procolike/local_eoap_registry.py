@@ -117,7 +117,7 @@ class LocalEaopRegistry(Registry):
         if process_id != new_eoap.description.id:
             raise ValueError(f"Replacement would touch process {new_eoap.description.id} but the request is for {process_id}.")
 
-        if not exisiting_process.description.mutable:
+        if not existing_process.description.mutable:
             raise RuntimeError(f"{new_eoap.description.id} is immutable")
 
         cwl_path: Path = Path(url2pathname(new_eoap.source, require_scheme=True))

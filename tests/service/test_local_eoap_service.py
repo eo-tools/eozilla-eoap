@@ -39,30 +39,48 @@ from pathlib import Path
 import yaml
 import shutil
 
+
 class LocalEoapServiceSetupTest(TestCase):
     def setUp(self):
-        self.temporary_persistency_directory = TemporaryDirectory(prefix="testing-service-setup-persistency-")
-        self.temporary_registry_directory = TemporaryDirectory(prefix="testing-service-setup-registry-")
+        self.temporary_persistency_directory = TemporaryDirectory(
+            prefix="testing-service-setup-persistency-"
+        )
+        self.temporary_registry_directory = TemporaryDirectory(
+            prefix="testing-service-setup-registry-"
+        )
 
         self.service = LocalEoapService(
             title="OGC API - Processes - DRU - Test Service",
             cwl_runner=CwlToolRunner(),
             persitency_directory=Path(self.temporary_persistency_directory.name),
-            process_registry=LocalEaopRegistry(Path(self.temporary_registry_directory.name)),
+            process_registry=LocalEaopRegistry(
+                Path(self.temporary_registry_directory.name)
+            ),
         )
 
-        registry: LocalEaopRegistry = self.service.process_registry
+        self.service.configure()
 
-        with open(Path(Path(__file__).parent.parent, "resources", "cwls", "echo-workflow.cwl"), "rt") as f:
+        with open(
+            Path(
+                Path(__file__).parent.parent, "resources", "cwls", "echo-workflow.cwl"
+            ),
+            "rt",
+        ) as f:
             y = yaml.safe_load(f)
-            registry.create(y, "echo-workflow")
+            self.service.process_registry.create(y, "echo-workflow")
 
-        with open(Path(Path(__file__).parent.parent, "resources", "cwls", "primes-workflow.cwl"), "rt") as f:
+        with open(
+            Path(
+                Path(__file__).parent.parent, "resources", "cwls", "primes-workflow.cwl"
+            ),
+            "rt",
+        ) as f:
             y = yaml.safe_load(f)
-            registry.create(y, "primes-workflow")
+            self.service.process_registry.create(y, "primes-workflow")
 
-    
     def tearDown(self):
+        self.service.process_registry.delete("echo-workflow")
+        self.service.process_registry.delete("primes-workflow")
         self.temporary_persistency_directory.cleanup()
         self.temporary_registry_directory.cleanup()
 
@@ -94,29 +112,38 @@ class LocalEoapServiceSetupTest(TestCase):
 class LocalServiceTest(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.app = app
-        self.restore_env = set_env(
-            EOZILLA_SERVICE="eozilla_eoap.testing.main:service"
-        )
+        self.restore_env = set_env(EOZILLA_SERVICE="eozilla_eoap.testing.main:service")
         ServiceProvider._service = None
         self.service: LocalEoapService = get_service()
         self.assertIsInstance(self.service, LocalEoapService)
 
+        self.service.configure()
+
         registry: LocalEaopRegistry = self.service.process_registry
         self.assertIsInstance(registry, LocalEaopRegistry)
 
-        with open(Path(Path(__file__).parent.parent, "resources", "cwls", "echo-workflow.cwl"), "rt") as f:
+        with open(
+            Path(
+                Path(__file__).parent.parent, "resources", "cwls", "echo-workflow.cwl"
+            ),
+            "rt",
+        ) as f:
             y = yaml.safe_load(f)
-            # don't error on existing workflow since registry has persistent state on disk
-            # FIXME: solve differently
-            registry.create(y, "echo-workflow", ignore_existing=True)
+            registry.create(y, "echo-workflow")
 
-        with open(Path(Path(__file__).parent.parent, "resources", "cwls", "primes-workflow.cwl"), "rt") as f:
+        with open(
+            Path(
+                Path(__file__).parent.parent, "resources", "cwls", "primes-workflow.cwl"
+            ),
+            "rt",
+        ) as f:
             y = yaml.safe_load(f)
-            # don't error on existing workflow since registry has persistent state on disk
-            # FIXME: solve differently
-            registry.create(y, "primes-workflow", ignore_existing=True)
+            registry.create(y, "primes-workflow")
 
     async def asyncTearDown(self):
+        self.service.process_registry.delete("echo-workflow")
+        self.service.process_registry.delete("primes-workflow")
+        shutil.rmtree(self.service.persitency_directory, ignore_errors=True)
         self.restore_env()
 
     def get_request(self) -> fastapi.Request:

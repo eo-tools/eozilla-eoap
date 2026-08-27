@@ -33,7 +33,7 @@ class LocalEaopRegistryTest(TestCase):
         # TODO: doesn't this somehow *invalidate* the test for the registry, if I access
         #       one of its methods while also testing the registry's functionality?
         self.registry.configure()
-        self.registry.create(self.echo_workflow_definition, None, ignore_existing=False)
+        self.registry.create(self.echo_workflow_definition, None)
 
     def tearDown(self):
         rmtree(self.temporary_path)
@@ -77,7 +77,7 @@ class LocalEaopRegistryTest(TestCase):
         self.assertIsInstance(proc, EoapProcess)
 
     def test_process_creation(self):
-        proc = self.registry.create(self.primes_workflow_definition, None, False)
+        proc = self.registry.create(self.primes_workflow_definition, None)
 
         self.assertIsInstance(proc, EoapProcess)
         self.assertEqual(proc.description.id, "primes-workflow")
@@ -88,7 +88,8 @@ class LocalEaopRegistryTest(TestCase):
     def test_process_creation_refuses_duplicate(self):
         with self.assertRaises(KeyError):
             self.registry.create(
-                self.echo_workflow_definition, None, ignore_existing=False
+                self.echo_workflow_definition,
+                None,
             )
 
     def test_process_read(self):
@@ -111,7 +112,9 @@ class LocalEaopRegistryTest(TestCase):
         self.assertIsInstance(proc, EoapProcess)
 
     def test_process_replacement(self):
-        self.registry.update(self.echo_workflow_definition_high_version, None)
+        self.registry.update(
+            "echo-workflow", self.echo_workflow_definition_high_version, None
+        )
 
         proc = self.registry.get("echo-workflow")
 

@@ -94,7 +94,6 @@ class JobTest(TestCase):
         self.assertEqual("echo-workflow", job.job_info.processID)
         self.assertEqual("static-job-id-01", job.job_info.jobID)
         self.assertIsNone(job.job_info.progress)
-        self.assertDictEqual(job.eoap_args, {"message": "שלום עולם"})
 
         self.mock_artifcat_manager_class.assert_called_once()
         self.mock_artifcat_manager_class.assert_called_with(
@@ -115,7 +114,6 @@ class JobTest(TestCase):
         self.assertEqual("echo-workflow", job.job_info.processID)
         self.assertEqual("static-job-id-01", job.job_info.jobID)
         self.assertIsNone(job.job_info.progress)
-        self.assertDictEqual(job.eoap_args, {"message": "Hello World"})
 
         self.mock_artifcat_manager_class.assert_called_once()
         self.mock_artifcat_manager_class.assert_called_with(

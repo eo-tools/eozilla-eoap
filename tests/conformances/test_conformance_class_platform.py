@@ -14,7 +14,7 @@ from gavicore.models import (
     ProcessDescription,
     Schema,
 )
-from wraptile.constants import ENV_VAR_SERVICE
+from gavicore.util.testing import set_env
 from wraptile.main import app
 from wraptile.provider import ServiceProvider
 
@@ -36,7 +36,7 @@ class ConformanceClassPlatformTest(TestCase):
             Path(__file__).parent.parent, "resources", "cwls"
         )
 
-        os.environ.setdefault(ENV_VAR_SERVICE, "eozilla_eoap.testing.main:service")
+        cls.restore_env = set_env(EOZILLA_SERVICE="eozilla_eoap.testing.main:service")
 
         # NOTE: need to touch service provider to trigger dependency injection
         ServiceProvider.get_instance()
@@ -51,6 +51,8 @@ class ConformanceClassPlatformTest(TestCase):
         for proc in processes:
             id_ = proc["id"]
             cls.client.delete(f"/processes/{id_}")
+
+        cls.restore_env()
 
     def test_abstract_test_10(self):
         response: Response = self.client.get("/processes")
@@ -279,7 +281,7 @@ class ConformanceClassPlatformStagedOutputsTest(TestCase):
             Path(__file__).parent.parent, "resources", "cwls"
         )
 
-        os.environ.setdefault(ENV_VAR_SERVICE, "eozilla_eoap.testing.main:service")
+        cls.restore_env = set_env(EOZILLA_SERVICE="eozilla_eoap.testing.main:service")
 
         # NOTE: need to touch service provider to trigger dependency injection
         ServiceProvider.get_instance()
@@ -294,6 +296,8 @@ class ConformanceClassPlatformStagedOutputsTest(TestCase):
         for proc in processes:
             id_ = proc["id"]
             cls.client.delete(f"/processes/{id_}")
+
+        cls.restore_env()
 
     def setUp(self):
         with open(Path(self.static_resources_path, "platform-stac-out.cwl"), "r") as f:
