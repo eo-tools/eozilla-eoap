@@ -28,11 +28,11 @@ from procodile import Job, Process
 from wraptile.exceptions import ServiceException
 from wraptile.main import app
 from wraptile.provider import ServiceProvider, get_service
-from wraptile.services.local.local_service import _run_imported_job
 
 from eozilla_eoap.cwltool.runner import CwlToolRunner
 from eozilla_eoap.procolike import LocalEaopRegistry, EoapProcess
 from eozilla_eoap.service import LocalEoapService
+from eozilla_eoap.service.eoap_service import _run_imported_job
 
 from tempfile import TemporaryDirectory
 from pathlib import Path
@@ -373,15 +373,16 @@ class LocalServiceTest(IsolatedAsyncioTestCase):
             "eozilla_eoap.testing.main:service",
             "primes-workflow",
             ProcessRequest(inputs={"maximum": 20}),
+            self.service.cwl_runner,
             "job_imported",
         )
 
         self.assertEqual(JobStatus.successful, job_info.status)
-        self.assertEqual("Done", job_info.message)
+        self.assertIsNone(job_info.message)
         self.assertIsNotNone(job_results)
         assert job_results is not None
         self.assertEqual(
-            {"return_value": [2, 3, 5, 7, 11, 13, 17, 19]},
+            {"primes": [2, 3, 5, 7, 11, 13, 17, 19]},
             job_results.model_dump(mode="python"),
         )
 
@@ -391,5 +392,6 @@ class LocalServiceTest(IsolatedAsyncioTestCase):
                 "eozilla_eoap.testing.main:service",
                 "missing",
                 ProcessRequest(),
+                self.service.cwl_runner,
                 "job_imported",
             )
