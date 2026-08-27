@@ -182,7 +182,7 @@ class ConformanceClassPlatformTest(TestCase):
                 title="Placeholder label for the input",
                 description="Placeholder doc-string for the input",
                 minOccurs=1,
-                maxOccurs="unbounded",
+                maxOccurs=1,
                 schema=Schema(
                     type="array",
                     nullable=False,

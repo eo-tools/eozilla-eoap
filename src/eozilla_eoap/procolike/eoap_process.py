@@ -233,7 +233,7 @@ class EoapProcess(Process):
             ogc_conformant_inputs[local_id_tag] = InputDescription(
                 **description.model_dump(),
                 minOccurs=1 if not optional else 0,
-                maxOccurs="unbounded" if unbounded else 1,
+                maxOccurs=1,
                 schema=schema,
             )
 
