@@ -11,63 +11,17 @@
     },
     {
       "rel": "item",
-      "href": "./S2B_45QXC_20260828_0_L2A/S2B_45QXC_20260828_0_L2A.json",
-      "type": "application/geo+json"
-    },
-    {
-      "rel": "item",
-      "href": "./S2B_45QYC_20260828_0_L2A/S2B_45QYC_20260828_0_L2A.json",
-      "type": "application/geo+json"
-    },
-    {
-      "rel": "item",
-      "href": "./S2B_45QZC_20260828_0_L2A/S2B_45QZC_20260828_0_L2A.json",
-      "type": "application/geo+json"
-    },
-    {
-      "rel": "item",
-      "href": "./S2B_46QBH_20260828_0_L2A/S2B_46QBH_20260828_0_L2A.json",
-      "type": "application/geo+json"
-    },
-    {
-      "rel": "item",
-      "href": "./S2B_46QCH_20260828_0_L2A/S2B_46QCH_20260828_0_L2A.json",
-      "type": "application/geo+json"
-    },
-    {
-      "rel": "item",
-      "href": "./S2B_45QXD_20260828_0_L2A/S2B_45QXD_20260828_0_L2A.json",
-      "type": "application/geo+json"
-    },
-    {
-      "rel": "item",
-      "href": "./S2B_45QYD_20260828_0_L2A/S2B_45QYD_20260828_0_L2A.json",
-      "type": "application/geo+json"
-    },
-    {
-      "rel": "item",
-      "href": "./S2B_45QZD_20260828_0_L2A/S2B_45QZD_20260828_0_L2A.json",
-      "type": "application/geo+json"
-    },
-    {
-      "rel": "item",
-      "href": "./S2B_46QBJ_20260828_0_L2A/S2B_46QBJ_20260828_0_L2A.json",
-      "type": "application/geo+json"
-    },
-    {
-      "rel": "item",
-      "href": "./S2B_46QCJ_20260828_0_L2A/S2B_46QCJ_20260828_0_L2A.json",
+      "href": "./S2B_10TFK_20210713_0_L2A/S2B_10TFK_20210713_0_L2A.json",
       "type": "application/geo+json"
     }
   ],
   "stac_extensions": [
+    "https://stac-extensions.github.io/grid/v1.0.0/schema.json",
     "https://stac-extensions.github.io/mgrs/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/sentinel-2/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/eo/v1.1.0/schema.json",
-    "https://stac-extensions.github.io/raster/v1.1.0/schema.json",
-    "https://stac-extensions.github.io/grid/v1.1.0/schema.json",
-    "https://stac-extensions.github.io/processing/v1.1.0/schema.json",
     "https://stac-extensions.github.io/view/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/projection/v1.1.0/schema.json"
+    "https://stac-extensions.github.io/processing/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/raster/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/projection/v1.0.0/schema.json"
   ]
 }

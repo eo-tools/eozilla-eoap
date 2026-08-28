@@ -17,7 +17,7 @@ $graph:
       type: Directory
       default:
         class: Directory
-        path: "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items?limit=10"
+        path: "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_10TFK_20210713_0_L2A"
   outputs:
     return_value:
       type: int
