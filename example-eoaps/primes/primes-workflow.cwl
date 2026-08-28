@@ -53,7 +53,7 @@ $graph:
         type: array
   requirements:
     DockerRequirement:
-      dockerPull: floriankaterndahl/primes-eoap:0.0.2
+      dockerPull: quay.io/bcdev/primes-eoap:0.0.2
     InlineJavascriptRequirement: {}
   stdout: primes.txt
 $namespaces:

@@ -41,4 +41,4 @@ $graph:
         glob: 'example-stac'
   requirements:
     DockerRequirement:
-      dockerPull: floriankaterndahl/stac-out-image:latest
+      dockerPull: quay.io/bcdev/stac-out-image:latest

@@ -57,7 +57,7 @@ $graph:
       type: float
   requirements:
     DockerRequirement:
-      dockerPull: floriankaterndahl/sleep-eoap:0.0.2
+      dockerPull: quay.io/bcdev/sleep-eoap:0.0.2
     InlineJavascriptRequirement: {}
   stdout: sleep.txt
 $namespaces:

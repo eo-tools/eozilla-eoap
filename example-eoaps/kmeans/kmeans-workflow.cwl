@@ -117,7 +117,7 @@ $graph:
       type: File
   requirements:
     DockerRequirement:
-      dockerPull: floriankaterndahl/kmeans-workflow:0.0.1
+      dockerPull: quay.io/bcdev/kmeans-workflow:0.0.1
     NetworkAccess:
       networkAccess: true
 - class: CommandLineTool
@@ -141,7 +141,7 @@ $graph:
       type: File[]
   requirements:
     DockerRequirement:
-      dockerPull: floriankaterndahl/kmeans-workflow:0.0.1
+      dockerPull: quay.io/bcdev/kmeans-workflow:0.0.1
     NetworkAccess:
       networkAccess: true
 - class: CommandLineTool
@@ -164,7 +164,7 @@ $graph:
       type: File
   requirements:
     DockerRequirement:
-      dockerPull: floriankaterndahl/kmeans-workflow:0.0.1
+      dockerPull: quay.io/bcdev/kmeans-workflow:0.0.1
 - class: CommandLineTool
   label: JPEG Preview Generation
   id: '#generate-jpeg-preview'
@@ -181,7 +181,7 @@ $graph:
       type: File
   requirements:
     DockerRequirement:
-      dockerPull: floriankaterndahl/kmeans-workflow:0.0.1
+      dockerPull: quay.io/bcdev/kmeans-workflow:0.0.1
 - class: CommandLineTool
   label: Generate a STAC Output Catalog
   id: '#generate-stac-catalog'
@@ -199,7 +199,7 @@ $graph:
         glob: 'stac-catalog'
   requirements:
     DockerRequirement:
-      dockerPull: floriankaterndahl/kmeans-workflow:0.0.1
+      dockerPull: quay.io/bcdev/kmeans-workflow:0.0.1
 - class: CommandLineTool
   label: JSON Metadata Extraction
   id: '#gdalinfo-json-output'
@@ -236,5 +236,5 @@ $graph:
   requirements:
     InlineJavascriptRequirement: {}
     DockerRequirement:
-      dockerPull: floriankaterndahl/kmeans-workflow:0.0.1
+      dockerPull: quay.io/bcdev/kmeans-workflow:0.0.1
 
