@@ -518,7 +518,28 @@ def _resolve_ogc_schema_from_cwl_utils(
                     type=DataType("string"),
                     nullable=nullable,
                     default=_recursively_extract_special_defaults_to_ogc(default),
-                    contentMediaType=format,
+                    oneOf=[
+                        Schema(
+                            contentMediaType="application/json",
+                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json",
+                            format="url",
+                        ),
+                        Schema(
+                            contentMediaType="application/geo+json",
+                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json",
+                            format="url",
+                        ),
+                        Schema(
+                            contentMediaType="application/json",
+                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml",
+                            format="url",
+                        ),
+                        Schema(
+                            contentMediaType="application/geo+json",
+                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml",
+                            format="url",
+                        ),
+                    ],
                     format="url",
                 ),
             )
