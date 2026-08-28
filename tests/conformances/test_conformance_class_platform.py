@@ -7,6 +7,7 @@ import yaml
 from fastapi import Response
 from fastapi.testclient import TestClient
 from gavicore.models import (
+    DataType,
     InputDescription,
     OutputDescription,
     ProcessDescription,
@@ -164,7 +165,33 @@ class ConformanceClassPlatformTest(TestCase):
                 title="Placeholder label for the input",
                 description="Placeholder doc-string for the input",
                 maxOccurs=1,
-                schema=Schema(type="string", nullable=False, format="url"),
+                schema=Schema(
+                    type=DataType("string"),
+                    nullable=False,
+                    oneOf=[
+                        Schema(
+                            contentMediaType="application/json",
+                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json",
+                            format="url",
+                        ),
+                        Schema(
+                            contentMediaType="application/geo+json",
+                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json",
+                            format="url",
+                        ),
+                        Schema(
+                            contentMediaType="application/json",
+                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml",
+                            format="url",
+                        ),
+                        Schema(
+                            contentMediaType="application/geo+json",
+                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml",
+                            format="url",
+                        ),
+                    ],
+                    format="url",
+                ),
             ),
             "optional_int_input": InputDescription(
                 title="Placeholder label for the input",
@@ -244,7 +271,23 @@ class ConformanceClassPlatformTest(TestCase):
             "directory_output": OutputDescription(
                 title="Placeholder label for the output",
                 description="Placeholder doc-string for the output",
-                schema=Schema(type="string", nullable=False, format="url"),
+                schema=Schema(
+                    type=DataType("string"),
+                    nullable=False,
+                    oneOf=[
+                        Schema(
+                            contentMediaType="application/json",
+                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/catalog-spec/json-schema/catalog.json",
+                            format="url",
+                        ),
+                        Schema(
+                            contentMediaType="application/geo+json",
+                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/catalog-spec/json-schema/catalog.json",
+                            format="url",
+                        ),
+                    ],
+                    format="url",
+                ),
             ),
             "optional_int_output": OutputDescription(
                 title="Placeholder label for the output",

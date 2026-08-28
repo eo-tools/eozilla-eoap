@@ -227,7 +227,7 @@ class EoapProcess(Process):
             f_: str | None = input_.format
 
             optional, unbounded, schema = _resolve_ogc_schema_from_cwl_utils(
-                t_, default=d_, format=f_, nullable=d_ is not None
+                t_, input_schema=True, default=d_, format=f_, nullable=d_ is not None
             )
 
             ogc_conformant_inputs[local_id_tag] = InputDescription(
@@ -252,7 +252,7 @@ class EoapProcess(Process):
             f_: str | None = output_.format  # type: ignore[no-redef]
 
             optional, unbounded, schema = _resolve_ogc_schema_from_cwl_utils(
-                t_, default=None, format=f_
+                t_, input_schema=False, default=None, format=f_
             )
 
             ogc_conformant_outputs[local_id_tag] = OutputDescription(
@@ -461,6 +461,7 @@ def _resolve_ogc_schema_from_cwl_utils(
     | parser.InputRecordSchema
     | parser.OutputRecordSchema,
     *,
+    input_schema: bool,
     default: Any | None = None,
     format: str | None = None,
     nullable: bool = False,
@@ -470,8 +471,8 @@ def _resolve_ogc_schema_from_cwl_utils(
     Every CWL argument definition is recursively resolved to a base
     type (boolean, int, float, string, File, Directory), that may be
     encapsulated in arrays or enums. Optional values are marked by
-    setting the `minOccurs` field to zero, arrays by marking a parameter
-    as "unbounded". Default values are preserved and set accordingly.
+    setting the `minOccurs` field to zero.
+    Default values are preserved and set accordingly.
 
     Note that `File` and `Directory` argument are converted to string inputs
     that must point to remote resources.
@@ -482,6 +483,8 @@ def _resolve_ogc_schema_from_cwl_utils(
 
     Args:
         cwl_type (str | list | parser.InputArraySchema | parser.OutputArraySchema | parser.InputEnumSchema | parser.OutputEnumSchema | parser.OutputRecordSchema | parser.OutputRecordSchema): Type field of workflow input/output item.
+        input_schema (bool): Boolean indicating whether input-specific schemas should be used.
+            Important for CWL type "Directory".
         default (Any | None, optional): Optional default value. Defaults to None.
         format (str | None, optional): Optional format string. Defaults to None.
         nullable (bool, optional): Boolean indicating if parameter can be null.
@@ -511,6 +514,43 @@ def _resolve_ogc_schema_from_cwl_utils(
                 ),
             )
         elif cwl_type == "Directory":
+            if input_schema:
+                schema_list: List[Schema] = [
+                    Schema(
+                        contentMediaType="application/json",
+                        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json",
+                        format="url",
+                    ),
+                    Schema(
+                        contentMediaType="application/geo+json",
+                        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json",
+                        format="url",
+                    ),
+                    Schema(
+                        contentMediaType="application/json",
+                        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml",
+                        format="url",
+                    ),
+                    Schema(
+                        contentMediaType="application/geo+json",
+                        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml",
+                        format="url",
+                    ),
+                ]
+            else:
+                schema_list: List[Schema] = [
+                    Schema(
+                        contentMediaType="application/json",
+                        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/catalog-spec/json-schema/catalog.json",
+                        format="url",
+                    ),
+                    Schema(
+                        contentMediaType="application/geo+json",
+                        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/catalog-spec/json-schema/catalog.json",
+                        format="url",
+                    ),
+                ]
+
             return (
                 nullable,
                 False,
@@ -518,28 +558,7 @@ def _resolve_ogc_schema_from_cwl_utils(
                     type=DataType("string"),
                     nullable=nullable,
                     default=_recursively_extract_special_defaults_to_ogc(default),
-                    oneOf=[
-                        Schema(
-                            contentMediaType="application/json",
-                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json",
-                            format="url",
-                        ),
-                        Schema(
-                            contentMediaType="application/geo+json",
-                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json",
-                            format="url",
-                        ),
-                        Schema(
-                            contentMediaType="application/json",
-                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml",
-                            format="url",
-                        ),
-                        Schema(
-                            contentMediaType="application/geo+json",
-                            contentSchema="https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml",
-                            format="url",
-                        ),
-                    ],
+                    oneOf=schema_list,
                     format="url",
                 ),
             )
@@ -561,7 +580,11 @@ def _resolve_ogc_schema_from_cwl_utils(
         content = cwl_type[0] if cwl_type[1] == "null" else cwl_type[1]
 
         _, u, s = _resolve_ogc_schema_from_cwl_utils(
-            content, nullable=True, default=default, format=format
+            content,
+            input_schema=input_schema,
+            nullable=True,
+            default=default,
+            format=format,
         )
         return True, u, s
     elif isinstance(cwl_type, parser.InputEnumSchema) or isinstance(
@@ -583,6 +606,7 @@ def _resolve_ogc_schema_from_cwl_utils(
     ):
         _, _, s = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.items,
+            input_schema=input_schema,
             nullable=False,
             default=None,
             format=format,

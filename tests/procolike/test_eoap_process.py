@@ -34,57 +34,93 @@ SIMPLE_TYPE_MAPPINGS = {
     # null -> this has no mapping as it's used as the "optional" marker in CWL
     "boolean": {
         "ogc_type": "boolean",
-        "default_in": True,
-        "default_out": True,
+        "cwl_default_input": True,
+        "ogc_default_input": True,
         "format": None,
     },
     "int": {
         "ogc_type": "integer",
-        "default_in": 2147483647,
-        "default_out": 2147483647,
+        "cwl_default_input": 2147483647,
+        "ogc_default_input": 2147483647,
         "format": None,
     },
     "long": {
         "ogc_type": "integer",
-        "default_in": 9223372036854775807,
-        "default_out": 9223372036854775807,
+        "cwl_default_input": 9223372036854775807,
+        "ogc_default_input": 9223372036854775807,
         "format": None,
     },
     "float": {
         "ogc_type": "number",
-        "default_in": 3.402823e38,
-        "default_out": 3.402823e38,
+        "cwl_default_input": 3.402823e38,
+        "ogc_default_input": 3.402823e38,
         "format": None,
     },
     "double": {
         "ogc_type": "number",
-        "default_in": 1.797693e20,
-        "default_out": 1.797693e20,
+        "cwl_default_input": 1.797693e20,
+        "ogc_default_input": 1.797693e20,
         "format": None,
     },
     "string": {
         "ogc_type": "string",
-        "default_in": "hello, world",
-        "default_out": "hello, world",
+        "cwl_default_input": "hello, world",
+        "ogc_default_input": "hello, world",
         "format": None,
     },
     "File": {
         "ogc_type": "string",
-        "default_in": CwlFile(
+        "cwl_default_input": CwlFile(
             location="https://files.example.com/remote/path/to/some/file.txt"
         ),
-        "default_out": "https://files.example.com/remote/path/to/some/file.txt",
+        "ogc_default_input": "https://files.example.com/remote/path/to/some/file.txt",
         "format": "url",
     },
     "Directory": {
         "ogc_type": "string",
-        "default_in": CwlDirectory(
+        "cwl_default_input": CwlDirectory(
             location="https://catalogs.example.com/remote/path/to/some/STAC/item/"
         ),
-        "default_out": "https://catalogs.example.com/remote/path/to/some/STAC/item/",
+        "ogc_default_input": "https://catalogs.example.com/remote/path/to/some/STAC/item/",
         "format": "url",
     },
 }
+
+DIRECTORY_INPUT_EXTRAS: List[Schema] = [
+    Schema(
+        contentMediaType="application/json",
+        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json",
+        format="url",
+    ),
+    Schema(
+        contentMediaType="application/geo+json",
+        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json",
+        format="url",
+    ),
+    Schema(
+        contentMediaType="application/json",
+        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml",
+        format="url",
+    ),
+    Schema(
+        contentMediaType="application/geo+json",
+        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml",
+        format="url",
+    ),
+]
+
+DIRECTORY_OUTPUT_EXTRAS: List[Schema] = [
+    Schema(
+        contentMediaType="application/json",
+        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/catalog-spec/json-schema/catalog.json",
+        format="url",
+    ),
+    Schema(
+        contentMediaType="application/geo+json",
+        contentSchema="https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/catalog-spec/json-schema/catalog.json",
+        format="url",
+    ),
+]
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -127,17 +163,26 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
+                        input_schema=True,
                         format=cwl_type.format,
                         nullable=cwl_type.default is not None,
                     )
                 )
 
-                expected_schema = Schema(
-                    type=value.get("ogc_type"),
-                    contentMediaType=cwl_type.format,
-                    nullable=False,
-                    format=value.get("format"),
-                )
+                if key != "Directory":
+                    expected_schema = Schema(
+                        type=value.get("ogc_type"),
+                        contentMediaType=cwl_type.format,
+                        nullable=False,
+                        format=value.get("format"),
+                    )
+                else:
+                    expected_schema = Schema(
+                        type=value.get("ogc_type"),
+                        nullable=False,
+                        oneOf=DIRECTORY_INPUT_EXTRAS,
+                        format=value.get("format"),
+                    )
 
                 expected_dump = expected_schema.model_dump()
                 computed_dump = computed_schema.model_dump()
@@ -150,26 +195,36 @@ class OgcSchemaResolvingTest(TestCase):
         for key, value in SIMPLE_TYPE_MAPPINGS.items():
             with self.subTest(key=key, vlaue=value):
                 cwl_type = WorkflowInputParameter(
-                    id="some-id", type_=key, default=value.get("default_in")
+                    id="some-id", type_=key, default=value.get("cwl_default_input")
                 )
 
                 # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
+                        input_schema=True,
                         default=cwl_type.default,
                         format=cwl_type.format,
                         nullable=cwl_type.default is not None,
                     )
                 )
 
-                expected_schema = Schema(
-                    type=value.get("ogc_type"),
-                    default=value.get("default_out"),
-                    contentMediaType=cwl_type.format,
-                    nullable=True,
-                    format=value.get("format"),
-                )
+                if key != "Directory":
+                    expected_schema = Schema(
+                        type=value.get("ogc_type"),
+                        default=value.get("ogc_default_input"),
+                        contentMediaType=cwl_type.format,
+                        nullable=True,
+                        format=value.get("format"),
+                    )
+                else:
+                    expected_schema = Schema(
+                        type=value.get("ogc_type"),
+                        default=value.get("ogc_default_input"),
+                        nullable=True,
+                        oneOf=DIRECTORY_INPUT_EXTRAS,
+                        format=value.get("format"),
+                    )
 
                 expected_dump = expected_schema.model_dump()
                 computed_dump = computed_schema.model_dump()
@@ -187,17 +242,26 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
+                        input_schema=True,
                         format=cwl_type.format,
                         nullable=cwl_type.default is not None,
                     )
                 )
 
-                expected_schema = Schema(
-                    type=value.get("ogc_type"),
-                    contentMediaType=cwl_type.format,
-                    nullable=True,
-                    format=value.get("format"),
-                )
+                if key != "Directory":
+                    expected_schema = Schema(
+                        type=value.get("ogc_type"),
+                        contentMediaType=cwl_type.format,
+                        nullable=True,
+                        format=value.get("format"),
+                    )
+                else:
+                    expected_schema = Schema(
+                        type=value.get("ogc_type"),
+                        nullable=True,
+                        oneOf=DIRECTORY_INPUT_EXTRAS,
+                        format=value.get("format"),
+                    )
 
                 expected_dump = expected_schema.model_dump()
                 computed_dump = computed_schema.model_dump()
@@ -216,6 +280,7 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable_1, unbounded_1, computed_schema_1 = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type_1.type_,
+                        input_schema=True,
                         format=cwl_type_1.format,
                         nullable=cwl_type_1.default is not None,
                     )
@@ -223,6 +288,7 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable_2, unbounded_2, computed_schema_2 = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type_2.type_,
+                        input_schema=True,
                         format=cwl_type_2.format,
                         nullable=cwl_type_2.default is not None,
                     )
@@ -250,21 +316,34 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
+                        input_schema=True,
                         format=cwl_type.format,
                         nullable=cwl_type.default is not None,
                     )
                 )
 
-                expected_schema = Schema(
-                    type="array",
-                    nullable=False,
-                    minItems=1,
-                    items=Schema(
-                        type=value.get("ogc_type"),
-                        contentMediaType=cwl_type.format,
-                        format=value.get("format"),
-                    ),
-                )
+                if key != "Directory":
+                    expected_schema = Schema(
+                        type="array",
+                        nullable=False,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            contentMediaType=cwl_type.format,
+                            format=value.get("format"),
+                        ),
+                    )
+                else:
+                    expected_schema = Schema(
+                        type="array",
+                        nullable=False,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            oneOf=DIRECTORY_INPUT_EXTRAS,
+                            format=value.get("format"),
+                        ),
+                    )
 
                 expected_dump = expected_schema.model_dump()
                 computed_dump = computed_schema.model_dump()
@@ -281,30 +360,44 @@ class OgcSchemaResolvingTest(TestCase):
                 cwl_type = WorkflowInputParameter(
                     id="some-id",
                     type_=InputArraySchema(type_="array", items=key),
-                    default=[value.get("default_in")],
+                    default=[value.get("cwl_default_input")],
                 )
 
                 # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
+                        input_schema=True,
                         default=cwl_type.default,
                         format=cwl_type.format,
                         nullable=cwl_type.default is not None,
                     )
                 )
 
-                expected_schema = Schema(
-                    type="array",
-                    default=[value.get("default_out")],
-                    nullable=True,
-                    minItems=1,
-                    items=Schema(
-                        type=value.get("ogc_type"),
-                        contentMediaType=cwl_type.format,
-                        format=value.get("format"),
-                    ),
-                )
+                if key != "Directory":
+                    expected_schema = Schema(
+                        type="array",
+                        default=[value.get("ogc_default_input")],
+                        nullable=True,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            contentMediaType=cwl_type.format,
+                            format=value.get("format"),
+                        ),
+                    )
+                else:
+                    expected_schema = Schema(
+                        type="array",
+                        default=[value.get("ogc_default_input")],
+                        nullable=True,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            oneOf=DIRECTORY_INPUT_EXTRAS,
+                            format=value.get("format"),
+                        ),
+                    )
 
                 expected_dump = expected_schema.model_dump()
                 computed_dump = computed_schema.model_dump()
@@ -324,22 +417,35 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
+                        input_schema=True,
                         default=cwl_type.default,
                         format=cwl_type.format,
                         nullable=cwl_type.default is not None,
                     )
                 )
 
-                expected_schema = Schema(
-                    type="array",
-                    nullable=True,
-                    minItems=1,
-                    items=Schema(
-                        type=value.get("ogc_type"),
-                        contentMediaType=cwl_type.format,
-                        format=value.get("format"),
-                    ),
-                )
+                if key != "Directory":
+                    expected_schema = Schema(
+                        type="array",
+                        nullable=True,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            contentMediaType=cwl_type.format,
+                            format=value.get("format"),
+                        ),
+                    )
+                else:
+                    expected_schema = Schema(
+                        type="array",
+                        nullable=True,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            oneOf=DIRECTORY_INPUT_EXTRAS,
+                            format=value.get("format"),
+                        ),
+                    )
 
                 expected_dump = expected_schema.model_dump()
                 computed_dump = computed_schema.model_dump()
@@ -354,29 +460,43 @@ class OgcSchemaResolvingTest(TestCase):
                 cwl_type = WorkflowInputParameter(
                     id="some-id",
                     type_=["null", InputArraySchema(type_="array", items=key)],
-                    default=[value.get("default_in")],
+                    default=[value.get("cwl_default_input")],
                 )
 
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
+                        input_schema=True,
                         default=cwl_type.default,
                         format=cwl_type.format,
                         nullable=cwl_type.default is not None,
                     )
                 )
 
-                expected_schema = Schema(
-                    type="array",
-                    nullable=True,
-                    minItems=1,
-                    items=Schema(
-                        type=value.get("ogc_type"),
-                        contentMediaType=cwl_type.format,
-                        format=value.get("format"),
-                    ),
-                    default=[value.get("default_out")],
-                )
+                if key != "Directory":
+                    expected_schema = Schema(
+                        type="array",
+                        nullable=True,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            contentMediaType=cwl_type.format,
+                            format=value.get("format"),
+                        ),
+                        default=[value.get("ogc_default_input")],
+                    )
+                else:
+                    expected_schema = Schema(
+                        type="array",
+                        nullable=True,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            oneOf=DIRECTORY_INPUT_EXTRAS,
+                            format=value.get("format"),
+                        ),
+                        default=[value.get("ogc_default_input")],
+                    )
 
                 expected_dump = expected_schema.model_dump()
                 computed_dump = computed_schema.model_dump()
@@ -397,6 +517,7 @@ class OgcSchemaResolvingTest(TestCase):
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
         nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.type_,
+            input_schema=True,
             format=cwl_type.format,
             nullable=cwl_type.default is not None,
         )
@@ -432,6 +553,7 @@ class OgcSchemaResolvingTest(TestCase):
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
         nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.type_,
+            input_schema=True,
             default=cwl_type.default,
             format=cwl_type.format,
             nullable=cwl_type.default is not None,
@@ -471,6 +593,7 @@ class OgcSchemaResolvingTest(TestCase):
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
         nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.type_,
+            input_schema=True,
             format=cwl_type.format,
             nullable=cwl_type.default is not None,
         )
@@ -509,6 +632,7 @@ class OgcSchemaResolvingTest(TestCase):
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
         nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.type_,
+            input_schema=True,
             default=cwl_type.default,
             format=cwl_type.format,
             nullable=cwl_type.default is not None,
@@ -542,6 +666,7 @@ class OgcSchemaResolvingTest(TestCase):
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
         nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.type_,
+            input_schema=True,
             default=cwl_type.default,
             format=cwl_type.format,
             nullable=cwl_type.default is not None,
@@ -571,6 +696,7 @@ class OgcSchemaResolvingTest(TestCase):
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
         nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.type_,
+            input_schema=True,
             default=cwl_type.default,
             format=cwl_type.format,
             nullable=cwl_type.default is not None,
@@ -600,6 +726,7 @@ class OgcSchemaResolvingTest(TestCase):
             # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
             nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
                 cwl_type.type_,
+                input_schema=True,
                 default=cwl_type.default,
                 format=cwl_type.format,
                 nullable=cwl_type.default is not None,
@@ -617,6 +744,7 @@ class OgcSchemaResolvingTest(TestCase):
             # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
             nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
                 cwl_type.type_,
+                input_schema=True,
                 default=cwl_type.default,
                 format=cwl_type.format,
                 nullable=cwl_type.default is not None,
@@ -632,6 +760,7 @@ class OgcSchemaResolvingTest(TestCase):
             # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
             nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
                 cwl_type.type_,
+                input_schema=True,
                 default=cwl_type.default,
                 format=cwl_type.format,
                 nullable=cwl_type.default is not None,
@@ -646,16 +775,25 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
+                        input_schema=False,
                         format=cwl_type.format,
                     )
                 )
 
-                expected_schema = Schema(
-                    type=value.get("ogc_type"),
-                    contentMediaType=cwl_type.format,
-                    nullable=False,
-                    format=value.get("format"),
-                )
+                if key != "Directory":
+                    expected_schema = Schema(
+                        type=value.get("ogc_type"),
+                        contentMediaType=cwl_type.format,
+                        nullable=False,
+                        format=value.get("format"),
+                    )
+                else:
+                    expected_schema = Schema(
+                        type=value.get("ogc_type"),
+                        oneOf=DIRECTORY_OUTPUT_EXTRAS,
+                        nullable=False,
+                        format=value.get("format"),
+                    )
 
                 expected_dump = expected_schema.model_dump()
                 computed_dump = computed_schema.model_dump()
@@ -673,16 +811,25 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
+                        input_schema=False,
                         format=cwl_type.format,
                     )
                 )
 
-                expected_schema = Schema(
-                    type=value.get("ogc_type"),
-                    contentMediaType=cwl_type.format,
-                    nullable=True,
-                    format=value.get("format"),
-                )
+                if key != "Directory":
+                    expected_schema = Schema(
+                        type=value.get("ogc_type"),
+                        contentMediaType=cwl_type.format,
+                        nullable=True,
+                        format=value.get("format"),
+                    )
+                else:
+                    expected_schema = Schema(
+                        type=value.get("ogc_type"),
+                        oneOf=DIRECTORY_OUTPUT_EXTRAS,
+                        nullable=True,
+                        format=value.get("format"),
+                    )
 
                 expected_dump = expected_schema.model_dump()
                 computed_dump = computed_schema.model_dump()
@@ -701,12 +848,14 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable_1, unbounded_1, computed_schema_1 = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type_1.type_,
+                        input_schema=False,
                         format=cwl_type_1.format,
                     )
                 )
                 nullable_2, unbounded_2, computed_schema_2 = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type_2.type_,
+                        input_schema=False,
                         format=cwl_type_2.format,
                         nullable=True,
                     )
@@ -734,20 +883,33 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
+                        input_schema=False,
                         format=cwl_type.format,
                     )
                 )
 
-                expected_schema = Schema(
-                    type="array",
-                    nullable=False,
-                    minItems=1,
-                    items=Schema(
-                        type=value.get("ogc_type"),
-                        contentMediaType=cwl_type.format,
-                        format=value.get("format"),
-                    ),
-                )
+                if key != "Directory":
+                    expected_schema = Schema(
+                        type="array",
+                        nullable=False,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            contentMediaType=cwl_type.format,
+                            format=value.get("format"),
+                        ),
+                    )
+                else:
+                    expected_schema = Schema(
+                        type="array",
+                        nullable=False,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            oneOf=DIRECTORY_OUTPUT_EXTRAS,
+                            format=value.get("format"),
+                        ),
+                    )
 
                 expected_dump = expected_schema.model_dump()
                 computed_dump = computed_schema.model_dump()
@@ -767,20 +929,33 @@ class OgcSchemaResolvingTest(TestCase):
                 nullable, unbounded, computed_schema = (
                     _resolve_ogc_schema_from_cwl_utils(
                         cwl_type.type_,
+                        input_schema=False,
                         format=cwl_type.format,
                     )
                 )
 
-                expected_schema = Schema(
-                    type="array",
-                    nullable=True,
-                    minItems=1,
-                    items=Schema(
-                        type=value.get("ogc_type"),
-                        contentMediaType=cwl_type.format,
-                        format=value.get("format"),
-                    ),
-                )
+                if key != "Directory":
+                    expected_schema = Schema(
+                        type="array",
+                        nullable=True,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            contentMediaType=cwl_type.format,
+                            format=value.get("format"),
+                        ),
+                    )
+                else:
+                    expected_schema = Schema(
+                        type="array",
+                        nullable=True,
+                        minItems=1,
+                        items=Schema(
+                            type=value.get("ogc_type"),
+                            oneOf=DIRECTORY_OUTPUT_EXTRAS,
+                            format=value.get("format"),
+                        ),
+                    )
 
                 expected_dump = expected_schema.model_dump()
                 computed_dump = computed_schema.model_dump()
@@ -801,6 +976,7 @@ class OgcSchemaResolvingTest(TestCase):
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
         nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.type_,
+            input_schema=False,
             format=cwl_type.format,
         )
 
@@ -837,6 +1013,7 @@ class OgcSchemaResolvingTest(TestCase):
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
         nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.type_,
+            input_schema=False,
             format=cwl_type.format,
         )
 
@@ -867,6 +1044,7 @@ class OgcSchemaResolvingTest(TestCase):
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
         nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.type_,
+            input_schema=False,
             format=cwl_type.format,
         )
 
@@ -895,6 +1073,7 @@ class OgcSchemaResolvingTest(TestCase):
         # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
         nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
             cwl_type.type_,
+            input_schema=False,
             format=cwl_type.format,
         )
 
@@ -921,6 +1100,7 @@ class OgcSchemaResolvingTest(TestCase):
             # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
             nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
                 cwl_type.type_,
+                input_schema=False,
                 format=cwl_type.format,
             )
 
@@ -936,6 +1116,7 @@ class OgcSchemaResolvingTest(TestCase):
             # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
             nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
                 cwl_type.type_,
+                input_schema=False,
                 format=cwl_type.format,
             )
 
@@ -949,6 +1130,7 @@ class OgcSchemaResolvingTest(TestCase):
             # TODO: the format parameter is somewhat useless I suppose?! Or it should be set at all times!
             nullable, unbounded, computed_schema = _resolve_ogc_schema_from_cwl_utils(
                 cwl_type.type_,
+                input_schema=False,
                 format=cwl_type.format,
             )
 
