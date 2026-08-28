@@ -1,10 +1,8 @@
-import os
 from pathlib import Path
 from typing import Dict
 from unittest import TestCase
 
 import pystac
-import pytest
 import yaml
 from fastapi import Response
 from fastapi.testclient import TestClient
@@ -272,6 +270,72 @@ class ConformanceClassPlatformTest(TestCase):
 
         self.assertDictEqual(process_description.inputs, expected_inputs)
         self.assertDictEqual(process_description.outputs, expected_outputs)
+
+
+class ConformanceClassPlatformStagedInputsTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.static_resources_path: Path = Path(
+            Path(__file__).parent.parent, "resources", "cwls"
+        )
+
+        cls.restore_env = set_env(EOZILLA_SERVICE="eozilla_eoap.testing.main:service")
+
+        # NOTE: need to touch service provider to trigger dependency injection
+        ServiceProvider.get_instance()
+
+        cls.client = TestClient(app)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.restore_env()
+
+    def setUp(self):
+        with open(Path(self.static_resources_path, "platform-stac-in.cwl"), "r") as f:
+            self.client.post(
+                "/processes",
+                content=f.read(),
+                headers={"Content-Type": "application/cwl"},
+            )
+
+    def tearDown(self):
+        response: Response = self.client.get("/processes")
+        processes = response.json()["processes"]
+
+        for proc in processes:
+            id_ = proc["id"]
+            self.client.delete(f"/processes/{id_}")
+
+    def test_abstract_test_11(self):
+        self.skipTest(
+            "The requested STAC Extension (single-file-stac) is deprecated, closest replacement are STAC Items and STAC ItemCollections."
+        )
+
+    def test_abstract_test_12(self):
+        response: Response = self.client.post(
+            "/processes/platform-stac-in/execution", json={}
+        )
+        self.assertEqual(response.status_code, 201)
+
+        response_body: Dict = response.json()
+        job_id: str = response_body.get("jobID")
+
+        while True:
+            response = self.client.get(f"/jobs/{job_id}")
+            self.assertEqual(response.status_code, 200)
+
+            response_body = response.json()
+
+            if response_body.get("status") != "running":
+                break
+
+        response = self.client.get(f"/jobs/{job_id}")
+        self.assertEqual(response.status_code, 200)
+
+        response_body = response.json()
+        self.assertEqual(response_body.get("status"), "successful")
+
+        self.client.delete(f"/jobs/{job_id}")
 
 
 class ConformanceClassPlatformStagedOutputsTest(TestCase):
