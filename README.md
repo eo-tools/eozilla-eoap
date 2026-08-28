@@ -11,7 +11,7 @@ It serves as a testbed to assess the current status of EOAP specification and al
 
 ## Features
 
-- Dynamic Deployment, Replacement and Undeployment of EOAPs encoded in CWL
+- Dynamic Deployment, Replacement and Undeployment of EOAPs encoded in packed CWL documents
 - (Partial) static validation of incoming EOAPs against CWL specification and EOAP extensions
 - Persistent process registry allowing for process re-discovery after restarting the webserver
 - Local EOAP execution using [`cwltool`](https://github.com/common-workflow-language/cwltool)

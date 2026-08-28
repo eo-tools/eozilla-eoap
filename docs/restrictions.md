@@ -8,6 +8,9 @@ The draft specification for deployment, replacement and undeployment of applicat
 - Deployment and replacement of CWL-based processes by reference or value using the OGC Application Package schema is not allowed (`req/cwl/execution-unit-by-ref` and `req/cwl/execution-unit-by-val`).
 - Deployment and replacemend of CWL-based processes as multi-part HTTP operations are not allowed.
 
+!!! note
+    In the context of the current state of implementation, the penultimate and ultimate bullets result in the follwing new restriction: Only so-called packed CWL documents are accepted. A packed document contains a `$graph` node under which all nodes of type `Workflow` and `CommandLineTool` are listed.
+
 ## Best Practice for EOAP Conformance Gaps
 
 Upon deployment or replacement, the registry performs some validation checks on the user-supplied CWL/EOAP. However, not all requirements defined by the "OGC Best Practice for Earth Observation Application Package" document can be asserted statically. Among those are:
