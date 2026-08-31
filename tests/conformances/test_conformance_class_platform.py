@@ -429,12 +429,12 @@ class ConformanceClassPlatformStagedOutputsTest(TestCase):
 
             response_body = response.json()
 
-            if response_body.get("status") == "successful":
+            if response_body.get("status") != "running":
                 break
-            elif response_body.get("status") == "running":
-                continue
-            else:
-                raise AssertionError
+
+        response = self.client.get(f"/jobs/{job_id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response_body.get("status"), "successful")
 
         response = self.client.get(f"/jobs/{job_id}/results")
         self.assertEqual(response.status_code, 200)
