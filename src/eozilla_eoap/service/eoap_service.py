@@ -260,9 +260,7 @@ class LocalEoapService(ServiceBase, DruService):
         eoap: dict = await load_and_validate_from_body(request)
 
         try:
-            process: EoapProcess = self.process_registry.create(
-                eoap, entrypoint=w
-            )
+            process: EoapProcess = self.process_registry.create(eoap, entrypoint=w)
         except RuntimeError:
             raise ServiceException(
                 status_code=403,

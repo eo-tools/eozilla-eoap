@@ -3,6 +3,7 @@ from collections.abc import Mapping
 
 from .process import Process
 
+
 class Registry(Mapping[str, Process], ABC):
     """Registry Base Class to Manage Processes.
 
@@ -16,6 +17,7 @@ class Registry(Mapping[str, Process], ABC):
     it must offer a means to restore previously added processes on
     startup of the OGC API - Processes compliant server.
     """
+
     @abstractmethod
     def configure(self, *args, **kwargs) -> None:
         """Configure and setup a registry.

@@ -112,10 +112,14 @@ class LocalEaopRegistry(Registry):
             # upsert is a bit more "expensive" because reading internal mapping is accessed twice
             return self.create(contents=contents, entrypoint=entrypoint)
 
-        assert process_id == existing_process.description.id, "Creation of EoapProcess potentially changed, expected process Ids to be identical."
+        assert process_id == existing_process.description.id, (
+            "Creation of EoapProcess potentially changed, expected process Ids to be identical."
+        )
 
         if process_id != new_eoap.description.id:
-            raise ValueError(f"Replacement would touch process {new_eoap.description.id} but the request is for {process_id}.")
+            raise ValueError(
+                f"Replacement would touch process {new_eoap.description.id} but the request is for {process_id}."
+            )
 
         if not existing_process.description.mutable:
             raise RuntimeError(f"{new_eoap.description.id} is immutable")

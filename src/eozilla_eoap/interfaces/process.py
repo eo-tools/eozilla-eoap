@@ -12,7 +12,7 @@ class Process(ABC):
     a minimal subset of interfaces and properties to, theoretically,
     allow vastly different processes to implement this base class.
     """
-    
+
     @classmethod
     @abstractmethod
     def create(cls, *args, **kwargs) -> "Process":
