@@ -12930,18 +12930,17 @@ packages:
 - pypi: ../eozilla/gavicore
   name: gavicore
   requires_dist:
-  - click
   - pydantic
   - pyyaml
-  - typer
-  requires_python: '>=3.10'
+  - typer>=0.26.0,<1
+  requires_python: '>=3.11'
 - pypi: ../eozilla/procodile
   name: procodile
   requires_dist:
   - pydantic
   - pyyaml
-  - typer
-  - gavicore>=0.1.2.dev0
+  - typer>=0.26.0,<1
+  - gavicore>=0.2.1.dev1
   requires_python: '>=3.10'
 - pypi: ../eozilla/wraptile
   name: wraptile
@@ -12949,10 +12948,10 @@ packages:
   - fastapi
   - pydantic
   - pyyaml
-  - typer
+  - typer>=0.26.0,<1
   - uvicorn
-  - gavicore>=0.1.2.dev0
-  - procodile>=0.1.2.dev0
+  - gavicore>=0.2.1.dev1
+  - procodile>=0.2.1.dev1
   requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/08/52/eefeba09be4ef2a1eb989eb92934561e8e502a6ee3c32654996e4be7e399/types_pyyaml-6.0.12.20260815-py3-none-any.whl
   name: types-pyyaml
