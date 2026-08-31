@@ -44,10 +44,16 @@ async def load_and_validate_from_body(request: Request) -> dict:
         raise RuntimeError()
 
     if not _is_valid_as_cwl(loaded_cwl):
-        raise ServiceException(status_code=422, detail="Not a valid cwl")
+        raise ServiceException(
+            status_code=422,
+            detail="Supplied EOAP is not a valid CWL document.",
+            type_id="bad-request",
+        )
 
     if not _is_valid_as_eoap(loaded_cwl):
-        raise ServiceException(status_code=422, detail="Not a valid eoap")
+        raise ServiceException(
+            status_code=422, detail="Supplied EOAP is not valid.", type_id="bad-request"
+        )
 
     return loaded_cwl
 

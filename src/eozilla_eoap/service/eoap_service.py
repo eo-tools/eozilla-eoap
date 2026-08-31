@@ -122,7 +122,11 @@ class LocalEoapService(ServiceBase, DruService):
         process: EoapProcess = self._get_process(process_id)
 
         if not process:
-            raise ServiceException(404, detail=f"Job {process_id!r} does not exist")
+            raise ServiceException(
+                status_code=404,
+                detail=f"Process {process_id!r} does not exist",
+                type_id="no-such-process",
+            )
 
         return process.description
 
@@ -142,20 +146,22 @@ class LocalEoapService(ServiceBase, DruService):
             )
         except ValidationError as e:
             raise ServiceException(
-                400,
+                status_code=400,
                 detail=f"Invalid parameterization for process {process_id!r}: {e}",
                 exception=e,
+                type_id="bad-request",
             ) from e
         executor = self._ensure_executor()
         use_processes = isinstance(executor, ProcessPoolExecutor)
         if use_processes:
             if self.service_ref is None:
                 raise ServiceException(
-                    500,
+                    status_code=500,
                     detail=(
                         "Local process execution requires the service to be "
                         "loaded from an import reference."
                     ),
+                    type_id="internal-server-error",
                 )
         self.jobs[job_id] = job
         self.job_uses_processes[job_id] = use_processes
@@ -203,6 +209,7 @@ class LocalEoapService(ServiceBase, DruService):
                     raise ServiceException(
                         status_code=500,
                         detail=f"Dismissal of {job_id} encountered an unexpected error.",
+                        type_id="internal-server-error",
                     )
         elif job.job_info.status in (
             JobStatus.dismissed,
@@ -246,8 +253,8 @@ class LocalEoapService(ServiceBase, DruService):
         if request.headers.get("Content-Type") not in self.SUPPORTED_MEDIA_TYPES:
             raise ServiceException(
                 status_code=415,
-                # type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/unsupported-media-type",
                 detail=f"Unsupported media types. Accepting EOAPs as {', '.join(self.SUPPORTED_MEDIA_TYPES)}.",
+                type_id="unsupported-media-type",
             )
 
         eoap: dict = await load_and_validate_from_body(request)
@@ -256,28 +263,29 @@ class LocalEoapService(ServiceBase, DruService):
             process: EoapProcess = self.process_registry.create(
                 eoap, entrypoint=w
             )
-        except RuntimeError as e:
+        except RuntimeError:
             raise ServiceException(
                 status_code=403,
-                type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/immutable-process",
-                detail=e.args,
-            ) from e
+                detail="Submitted process id references an immutable process in registry.",
+                type_id="immutable-process",
+            ) from None
         except KeyError:
             raise ServiceException(
                 status_code=409,
-                # type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/duplicated-process",
                 detail="Submitted process id already exists in registry.",
+                type_id="duplicated-process",
             ) from None
         except EntrypointNotFoundError:
             raise ServiceException(
                 status_code=400,
-                # type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/workflow-not-found",
                 detail=f"Workflow entrypoint {w} not found",
+                type_id="workflow-not-found",
             ) from None
         except NamespaceNotFoundError:
             raise ServiceException(
                 status_code=422,
                 detail="Mailformed CWL document.",
+                type_id="bad-request",
             ) from None
 
         response.headers["location"] = f"/processes/{process.description.id}"
@@ -299,8 +307,8 @@ class LocalEoapService(ServiceBase, DruService):
         if request.headers.get("Content-Type") not in self.SUPPORTED_MEDIA_TYPES:
             raise ServiceException(
                 status_code=415,
-                type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/unsupported-media-type",
                 detail=f"Unsupported media types. Accepting EOAPs as {', '.join(self.SUPPORTED_MEDIA_TYPES)}.",
+                type_id="unsupported-media-type",
             )
 
         eoap: dict = await load_and_validate_from_body(request)
@@ -309,22 +317,23 @@ class LocalEoapService(ServiceBase, DruService):
             process: EoapProcess = self.process_registry.update(
                 process_id, eoap, entrypoint=w or process_id
             )
-        except RuntimeError as e:
+        except RuntimeError:
             raise ServiceException(
                 status_code=403,
-                type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/immutable-process",
-                detail=e.args,
-            ) from e
+                detail="Submitted process id references an immutable process in registry.",
+                type_id="immutable-process",
+            ) from None
         except EntrypointNotFoundError:
             raise ServiceException(
                 status_code=400,
-                # type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/workflow-not-found",
                 detail=f"Workflow entrypoint {w} not found",
+                type_id="workflow-not-found",
             ) from None
         except NamespaceNotFoundError:
             raise ServiceException(
                 status_code=422,
                 detail="Mailformed CWL document.",
+                type_id="bad-request",
             ) from None
 
         response.headers["location"] = f"/processes/{process.description.id}"
@@ -429,14 +438,16 @@ class LocalEoapService(ServiceBase, DruService):
             process = self.process_registry.read(process_id)
         except KeyError:
             raise ServiceException(
-                404, detail=f"Process {process_id!r} does not exist"
+                status_code=404,
+                detail=f"Process {process_id!r} does not exist",
+                type_id="no-such-process",
             ) from None
         else:
             if not process.description.mutable:
                 raise ServiceException(
-                    403,
-                    type="https://www.opengis.net/def/exceptions/ogcapi-processes-2/1.0/immutable-process",
+                    status_code=403,
                     detail=f"Process {process_id!r} is immutable",
+                    type_id="immutable-process",
                 ) from None
         return process
 
@@ -446,10 +457,20 @@ class LocalEoapService(ServiceBase, DruService):
 
         job = self.jobs.get(job_id)
         if job is None:
-            raise ServiceException(404, detail=f"Job {job_id!r} does not exist")
+            raise ServiceException(
+                status_code=404,
+                detail=f"Job {job_id!r} does not exist",
+                type_id="no-such-job",
+                is_job_problem=True,
+            )
         message = forbidden_status_codes.get(job.job_info.status)
         if message:
-            raise ServiceException(403, detail=f"Job {job_id!r} {message}")
+            raise ServiceException(
+                status_code=403,
+                detail=f"Job {job_id!r} {message}",
+                type_id="result-not-ready",
+                is_job_problem=True,
+            )
         return job
 
 
