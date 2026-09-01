@@ -25,31 +25,31 @@ class LocalArtifactManager:
     """Resolving remote input files and manage output directories
 
     The LocalArtifactManager is responsible for:
-        - create the runs directory and it's subdirectory for a given Job
-        - resolve remote files to local ones, i.e. download them
-        - patch the instance model created based off of process
-          arguments to point to local files instead of URLs
-        - regenerate dictonary to be used as input for workflow execution
-        - remove previously downloaded input files after workflow execution,
-          both in case of successful and failed runs
-        - cleanup output files and directories, either explicitly or when deleting
-          an instance
+    - create the runs directory and it's subdirectory for a given Job
+    - resolve remote files to local ones, i.e. download them
+    - patch the instance model created based off of process
+      arguments to point to local files instead of URLs
+    - regenerate dictonary to be used as input for workflow execution
+    - remove previously downloaded input files after workflow execution,
+      both in case of successful and failed runs
+    - cleanup output files and directories, either explicitly or when deleting
+      an instance
 
     While this is tightly coupled to job execution and delegation of
     actual execution to a CWL runner, it's not really the responsibility
     of either 'classes' and thus factored out.
 
     Notes:
-        - Rationale for downloading files: "At job submission, the inputs passed
-            as references (as HTTP link, S3 link, etc.) must be fetched and made
-            available for processing by executing the CWL document." While this
-            could also mean, transparently mapping the file and not actually
-            downloading it eagerly, this is to much for the current state of
-            the implementation.
-        - Rationale for not downloding assets in Directories: "For the data
-            stage-in, the Platform creates a local STAC Catalog with a STAC Item
-            whose Assets have an accessible href (either local or remote e.g. COG)
-            as the input files manifest for the application."
+    - Rationale for downloading files: "At job submission, the inputs passed
+      as references (as HTTP link, S3 link, etc.) must be fetched and made
+      available for processing by executing the CWL document." While this
+      could also mean, transparently mapping the file and not actually
+      downloading it eagerly, this is to much for the current state of
+      the implementation.
+    - Rationale for not downloding assets in Directories: "For the data
+      stage-in, the Platform creates a local STAC Catalog with a STAC Item
+      whose Assets have an accessible href (either local or remote e.g. COG)
+      as the input files manifest for the application."
     """
 
     def __init__(self, base: Path, job_id: str, process_instance_model: BaseModel):
@@ -122,7 +122,6 @@ class LocalArtifactManager:
             This method has the side effect of updating the supplied process
             instance model.
         """
-        # NOTE: This method has the side effect of updating the supplied instance model
         self.staged_in_files, self.process_instance_model = _iteratively_stage_in_files(
             self.process_instance_model,
             path_to_location=True,
@@ -135,7 +134,6 @@ class LocalArtifactManager:
             This method has the side effect of updating the supplied process
             instance model.
         """
-        # NOTE: This method has the side effect of updating the supplied instance model
         self.staged_in_directories, self.process_instance_model = (
             _iteratively_stage_in_directories(
                 self.process_instance_model,
@@ -161,8 +159,8 @@ class LocalArtifactManager:
         """Stage-Out Logs and Results of Workflow/Process execution.
 
         Notes:
-            - The `workflow_results` input argument is copied, changes are
-              not visible on the original value.
+        - The `workflow_results` input argument is copied, changes are
+          not visible on the original value.
 
         Args:
             workflow_results (Dict[str, Any]): Workflow/Process results returned by executor.
@@ -206,10 +204,10 @@ class LocalArtifactManager:
         value pointing to the result.
 
         Notes:
-            - The `workflow_results` input argument is copied, changes are
-              not visible on the original value.
-            - For STAC catalogs, only the `catalog.json` is returned which
-              is sufficient to discover all related output data.
+        - The `workflow_results` input argument is copied, changes are
+          not visible on the original value.
+        - For STAC catalogs, only the `catalog.json` is returned which
+          is sufficient to discover all related output data.
 
         Args:
             results (Dict[str, Any]): Workflow/Process results returned by executor.
@@ -220,7 +218,6 @@ class LocalArtifactManager:
         if not (self.temporary_output_directory and self.persistent_output_directory):
             raise RuntimeError
 
-        # QUESTION: Work with result dict or with files found in file system?
         tmp_out_dir: Path = Path(self.temporary_output_directory, "out")
         per_out_dir: Path = Path(self.persistent_output_directory, "out")
 
@@ -704,8 +701,8 @@ def _load_local_stac_from_cwl_output(path: str) -> Catalog:
     """Read STAC Object from Local Location.
 
     Notes:
-        - The OGC Best Practice Guidelines state that a output STAC Catalog must
-          be named "catalog.json"
+    - The OGC Best Practice Guidelines state that a output STAC Catalog must
+      be named "catalog.json"
 
     Args:
         path (str): Path pointing to a local STAC Object.
