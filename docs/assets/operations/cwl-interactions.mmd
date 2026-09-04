@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant CTR as CwlToolRunner
+    participant CBE as CallbackExecutor
+    participant C as cwltool
+
+    CTR->>C: factory.Factory.make(local URL)
+    C-->>CTR: CWL callable
+
+    CTR->>C: Callable(args)
+
+    loop Iterate over all job steps
+    C->>CBE: yield next job step
+    CBE->>CBE: Check context for cancellation
+    CBE-->>C: job step
+    C->>C: Execute
+    end
+
+    C-->>CTR: Workflow result dict
