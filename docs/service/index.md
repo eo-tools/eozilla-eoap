@@ -4,7 +4,7 @@ To start a local service instance, activate the Pixi environment and run `wrapti
 
 ## Example Usage Scenario Walkthrough
 
-The following section illustrates how a user can interact with a running server instance. Configuration parametery may easily be changed by adapting the module named above which is copied verbatim here for clarity. The EOAPs referenced are detailed in the [Example EOAPs](examples) section.
+The following section illustrates how a user can interact with a running server instance. Configuration parametery may easily be changed by adapting the module named above which is copied verbatim here for clarity. The EOAPs referenced are detailed in the [Example EOAPs](examples.md) section.
 
 ```python
 from pathlib import Path
