@@ -11,6 +11,7 @@ from urllib.request import pathname2url, url2pathname
 
 import pystac
 import requests
+from gavicore.models import Link
 from pydantic import AnyUrl, BaseModel, FileUrl, HttpUrl
 from pystac import STACObject
 from pystac.asset import Asset
@@ -665,27 +666,41 @@ def _(stac_obj: Item) -> Catalog:
     return catalog
 
 
-def _load_remote_stac_from_http_url(path: str) -> ItemCollection | Catalog | Item:
-    """Read STAC Object from Remote Location.
+def _load_remote_stac(path: str) -> ItemCollection | Catalog | Item:
+    """Read STAC Object from Outside the Service.
 
     Args:
-        path (str): URL pointing to a remote STAC Object.
+        path (str): URL pointing to a STAC Object either on the file
+        system or accessible via HTTP/S.
+
+    Notes
+        Local files are supported to ease development. In a real service
+        environment, the STAC inputs cannot be resident on the client's
+        local file system as the platform does not have access to it.
 
     Raises:
         ValidationError: Raised in case the supplied URL does not match
-            pydantic's HttpUrl-scheme.
+            pydantic's HttpUrl-scheme or FileUrl-scheme.
         ValueError: Raised in case the supplied URL does not point to
             a STAC ItemCollection, STAC Catalog or STAC Item.
 
     Returns:
         ItemCollection | Catalog | Item: In-memory representation of STAC object.
     """
-    validated_url: HttpUrl = HttpUrl(path)
+    scheme, _ = path.split(":", maxsplit=1)
+    if scheme == "file":
+        validated_url = FileUrl(path).path
+    elif scheme in ["http", "https"]:
+        validated_url = HttpUrl(path).unicode_string()
+    else:
+        raise ValueError(
+            f"Schema {scheme} is not supported as source for input staging."
+        )
 
     try:
-        generic_stac_obj: STACObject = STACObject.from_file(str(validated_url))
+        generic_stac_obj: STACObject = STACObject.from_file(validated_url)
     except pystac.errors.STACTypeError:
-        return ItemCollection.from_file(str(validated_url))
+        return ItemCollection.from_file(validated_url)
     else:
         if generic_stac_obj.STAC_OBJECT_TYPE == "Catalog":
             return Catalog.from_dict(generic_stac_obj.to_dict())
@@ -737,7 +752,11 @@ def _load_local_stac_from_cwl_output(path: str) -> Catalog:
 
 
 def _wolfgang_beltracchi(
-    key: str, value: Asset, source_trunk: str, destination_trunk: str
+    key: str,
+    value: Asset,
+    source_trunk: str,
+    destination_trunk: str,
+    prepend_file_scheme=False,
 ) -> Dict[str, Asset]:
     """Copy STAC Asset to new trunk
 
@@ -751,6 +770,7 @@ def _wolfgang_beltracchi(
         value (Asset): STAC Asset
         source_trunk (str): Path to root of root STAC object containing the asset to copy.
         destination_trunk (str): Path to new root of root STAC object containing the copied asset.
+        prepend_file_scheme (bool): Should the scheme 'file://' be prepended to the asset href? Defaults to False.
 
     Returns:
         Dict[str, Asset]: Mapping of asset key (name) in new STAC object to new Asset instance with copied data.
@@ -765,6 +785,9 @@ def _wolfgang_beltracchi(
     Path(new_location).parent.mkdir(parents=True, exist_ok=True)
 
     new_asset: Asset = value.copy(new_location)
+
+    if prepend_file_scheme:
+        new_asset.href = pathname2url(new_asset.href, add_scheme=True)
 
     return {key: new_asset}
 
@@ -805,21 +828,22 @@ def _copy_local_stac_catalog_to_new_trunk(
         _wolfgang_beltracchi,
         source_trunk=str(self_source_trunk),
         destination_trunk=str(self_destination_trunk),
+        prepend_file_scheme=True,
     )
+
+    url_destination_trunk = pathname2url(self_destination_trunk, add_scheme=True)
 
     stac_obj.make_all_asset_hrefs_absolute()
 
     catalog: Catalog = stac_obj.map_assets(local_beltracchi)
 
-    catalog.set_self_href(str(self_destination_trunk))
+    catalog.set_self_href(url_destination_trunk)
 
-    catalog.normalize_hrefs(str(self_destination_trunk))
-
-    catalog.make_all_asset_hrefs_relative()
+    catalog.normalize_hrefs(url_destination_trunk)
 
     _ = [item.set_root(catalog) for item in catalog.get_all_items()]  # type: ignore[func-returns-value]
 
-    catalog.save(catalog_type=pystac.CatalogType.SELF_CONTAINED)
+    catalog.save(catalog_type=pystac.CatalogType.ABSOLUTE_PUBLISHED)
 
     return catalog
 
@@ -885,7 +909,7 @@ def _iteratively_stage_in_directories(
                     return_mapping[tag] = [
                         _get_local_catalog_base_directory(
                             _dispatch_stac_resolving(
-                                _load_remote_stac_from_http_url(x.location or x.path)
+                                _load_remote_stac(x.location or x.path)
                             )
                         )
                         for x in potential_directory
@@ -904,7 +928,7 @@ def _iteratively_stage_in_directories(
                     return_mapping[tag] = [
                         _get_local_catalog_base_directory(
                             _dispatch_stac_resolving(
-                                _load_remote_stac_from_http_url(
+                                _load_remote_stac(
                                     potential_directory.location
                                     or potential_directory.path
                                 )
@@ -921,9 +945,7 @@ def _iteratively_stage_in_directories(
             d: File = model.__dict__[tag]
             return_mapping[tag] = [
                 _get_local_catalog_base_directory(
-                    _dispatch_stac_resolving(
-                        _load_remote_stac_from_http_url(d.location or d.path)
-                    )
+                    _dispatch_stac_resolving(_load_remote_stac(d.location or d.path))
                 ),
             ]
 
@@ -987,7 +1009,13 @@ def _iteratively_stage_out_files(
 
                 shutil.copyfile(src_path, dst_path)
 
-                patched_sublist.append(pathname2url(dst_path, add_scheme=True))
+                patched_sublist.append(
+                    # NOTE: The current implementation does not allow retrieval of the content type
+                    # NOTE: returning a link should be fine, but seems opinioated;
+                    #       in the current implementation this says that a file's
+                    #       'value' representation corresponds to a link
+                    Link(href=pathname2url(dst_path, add_scheme=True))
+                )
                 staged_out_sublist.append(Path(dst_path))
 
             patched_result_dict[result_tag] = patched_sublist
@@ -1004,7 +1032,13 @@ def _iteratively_stage_out_files(
 
             shutil.copyfile(src_path, dst_path)
 
-            patched_result_dict[result_tag] = pathname2url(dst_path, add_scheme=True)
+            # NOTE: The current implementation does not allow retrieval of the content type
+            # NOTE: returning a link should be fine, but seems opinioated;
+            #       in the current implementation this says that a file's
+            #       'value' representation corresponds to a link
+            patched_result_dict[result_tag] = Link(
+                href=pathname2url(dst_path, add_scheme=True)
+            )
             staged_out_files[result_tag] = [
                 Path(dst_path),
             ]
@@ -1069,9 +1103,23 @@ def _iteratively_stage_out_directories(
                     old_catalog, dst_base
                 )
 
-                patched_sublist.append(new_catalog.get_self_href())
+                # NOTE: returning a link should be fine, but seems opinioated;
+                #       in the current implementation this says that a STAC Catalog's
+                #       'value' representation corresponds to a link
+                patched_sublist.append(
+                    Link(
+                        href=new_catalog.get_self_href(),
+                        type="application/geo+json",
+                    )
+                )
+
                 staged_out_sublist.append(
-                    _get_local_catalog_base_directory(new_catalog)
+                    Path(
+                        url2pathname(
+                            str(_get_local_catalog_base_directory(new_catalog)),
+                            require_scheme=True,
+                        )
+                    )
                 )
 
             patched_result_dict[result_tag] = patched_sublist
@@ -1095,9 +1143,21 @@ def _iteratively_stage_out_directories(
                 old_catalog, dst_base
             )
 
-            patched_result_dict[result_tag] = new_catalog.get_self_href()
+            # NOTE: returning a link should be fine, but seems opinioated;
+            #       in the current implementation this says that a STAC Catalog's
+            #       'value' representation corresponds to a link
+            patched_result_dict[result_tag] = Link(
+                href=new_catalog.get_self_href(),
+                type="application/geo+json",
+            )
+
             staged_out_directories[result_tag] = [
-                _get_local_catalog_base_directory(new_catalog),
+                Path(
+                    url2pathname(
+                        str(_get_local_catalog_base_directory(new_catalog)),
+                        require_scheme=True,
+                    ),
+                )
             ]
         else:
             patched_result_dict[result_tag] = result_value

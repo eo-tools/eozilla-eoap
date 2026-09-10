@@ -493,9 +493,7 @@ class LocalArtifactManagerTest(TestCase):
                 "/some/local/file/path/to/downloaded/file.txt", local_model.location
             )
 
-    @patch(
-        "eozilla_eoap.procolike.eoap_artifact_manager._load_remote_stac_from_http_url"
-    )
+    @patch("eozilla_eoap.procolike.eoap_artifact_manager._load_remote_stac")
     def test_stage_in_stac_item(self, mock_load_stac):
         item = pystac.Item(
             id="test-item",
@@ -545,9 +543,7 @@ class LocalArtifactManagerTest(TestCase):
 
             shutil.rmtree(local_model.location)
 
-    @patch(
-        "eozilla_eoap.procolike.eoap_artifact_manager._load_remote_stac_from_http_url"
-    )
+    @patch("eozilla_eoap.procolike.eoap_artifact_manager._load_remote_stac")
     def test_stage_in_stac_itemcollection(self, mock_load_stac):
         item = pystac.Item(
             id="test-item",
@@ -691,10 +687,12 @@ class LocalArtifactManagerTest(TestCase):
             patched_result = manager.stage_out(boilerplate_result)
 
             self.assertEqual(len(patched_result), 1)
-            self.assertIsNotNone(FileUrl(patched_result["test_out"]))
+            self.assertIsNotNone(FileUrl(patched_result["test_out"].href))
             self.assertEqual(boilerplate_result.keys(), patched_result.keys())
 
-            patched_fp = url2pathname(patched_result["test_out"], require_scheme=True)
+            patched_fp = url2pathname(
+                patched_result["test_out"].href, require_scheme=True
+            )
             self.assertTrue(Path(patched_fp).exists())
             self.assertEqual(Path(patched_fp).parent.name, "out")
 
@@ -733,10 +731,12 @@ class LocalArtifactManagerTest(TestCase):
             patched_result = manager.stage_out(boilerplate_result)
 
             self.assertEqual(len(patched_result), 1)
-            self.assertIsInstance(patched_result["test_out"], str)
+            self.assertIsInstance(patched_result["test_out"].href, str)
             self.assertEqual(boilerplate_result.keys(), patched_result.keys())
 
-            patched_fp = url2pathname(patched_result["test_out"], require_scheme=True)
+            patched_fp = url2pathname(
+                patched_result["test_out"].href, require_scheme=True
+            )
             self.assertTrue(Path(patched_fp).exists())
             self.assertEqual(Path(patched_fp).parent.name, "out")
 
@@ -771,22 +771,26 @@ class LocalArtifactManagerTest(TestCase):
             manager.initialize()
             patched_result = manager.stage_out_results(boilerplate_result)
 
+            catalog_path = url2pathname(
+                patched_result["test_out"].href, require_scheme=True
+            )
+
             self.assertEqual(len(patched_result), 1)
-            self.assertIsInstance(patched_result["test_out"], str)
+            self.assertIsInstance(catalog_path, str)
             self.assertEqual(boilerplate_result.keys(), patched_result.keys())
 
             # check correct nesting/structure
-            self.assertEqual(Path(patched_result["test_out"]).parent.parent.name, "out")
+            self.assertEqual(Path(catalog_path).parent.parent.name, "out")
             self.assertEqual(len(manager.staged_out_directories), 1)
             self.assertIn(
-                Path(patched_result["test_out"]).parent,
+                Path(catalog_path).parent,
                 itertools.chain.from_iterable(manager.staged_out_directories.values()),
             )
 
             # check existence of assets/catalog related files
-            catalog_base_dir = Path(patched_result["test_out"]).parent
+            catalog_base_dir = Path(catalog_path).parent
             self.assertTrue(catalog_base_dir.exists())
-            self.assertTrue(Path(patched_result["test_out"]).exists())
+            self.assertTrue(Path(catalog_path).exists())
             self.assertTrue(
                 Path(
                     catalog_base_dir,
@@ -808,7 +812,7 @@ class LocalArtifactManagerTest(TestCase):
             )
 
             # validate STAC catalog itself
-            catalog = pystac.STACObject.from_file(patched_result["test_out"])
+            catalog = pystac.STACObject.from_file(catalog_path)
             self.assertIsNone(pystac.validation.validate_all(catalog))
 
     def test_stage_out_logs_success(self):

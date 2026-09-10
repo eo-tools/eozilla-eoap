@@ -7,7 +7,7 @@
 
 This repository provides a partial implementation of the [OGC API - Processes - Part 2: Deploy, Replace, Undeploy](https://docs.ogc.org/DRAFTS/20-044.html) draft specification and the [OGC Best Practice for Earth Observation Application Package](https://docs.ogc.org/bp/20-089r1.html) by extending various components of [Eozilla](https://github.com/eo-tools/eozilla).
 
-It serves as a testbed to assess the current status of EOAP specification and allows Earth Observation Application Package developers to execute their EOAPs locally with minimal setup required by leveraging a fast lightweight HTTP server implementing OGC API - Processes - Part 1: Core, i.e. wraptile.
+It serves as a testbed to assess the current status of EOAP specification and allows Earth Observation Application Package developers to execute their EOAPs locally with minimal setup required by leveraging a fast lightweight HTTP server defining most of the OGC API - Processes - Part 1: Core interfaces/interactions, i.e. wraptile.
 
 ## Features
 

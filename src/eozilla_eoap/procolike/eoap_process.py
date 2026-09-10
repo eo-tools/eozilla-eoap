@@ -7,9 +7,11 @@ from gavicore.models import (
     DataType,
     DescriptionType,
     InputDescription,
+    JobControlOptions,
     OutputDescription,
     ProcessDescription,
     Schema,
+    TransmissionMode,
 )
 from pydantic import (
     BaseModel,
@@ -124,6 +126,18 @@ class EoapProcess(Process):
                 inputs=input_description,
                 outputs=output_description,
                 keywords=keywords,
+                # NOTE: as per table 11 of OGC API - Processes - Part 1: Core:
+                #       statusInfo.yaml can only be returned in asynchronous
+                #       mode
+                #       *basically added to narrow down allowed path for given
+                #       return value of type JobInfo*
+                jobControlOptions=[JobControlOptions.async_execute],
+                # NOTE: as per table 12 of OGC API - Processes - Part 1: Core:
+                #       value must be used when one OR MORE parameters are to
+                #       be returned.
+                #       *basically added to narrow down allowed path for given
+                #       return value of type JobResult*
+                outputTransmission=[TransmissionMode.value],
             ),
         )
 

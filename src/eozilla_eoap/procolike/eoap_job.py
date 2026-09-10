@@ -19,8 +19,8 @@ from gavicore.models import (
     ProcessRequest,
     Subscriber,
 )
-from procodile.reporter import CallbackReporter
 from procodile.job import JobCancelledException
+from procodile.reporter import CallbackReporter
 
 from eozilla_eoap.interfaces.runner import Runner
 

@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict
 from unittest import TestCase
-
+from urllib.request import url2pathname
 import pystac
 import yaml
 from fastapi import Response
@@ -11,6 +11,7 @@ from gavicore.models import (
     InputDescription,
     OutputDescription,
     ProcessDescription,
+    Link,
     Schema,
 )
 from gavicore.util.testing import set_env
@@ -19,12 +20,14 @@ from wraptile.provider import ServiceProvider
 
 
 def check_asset_existance(key: str, asset: pystac.Asset) -> Dict[str, pystac.Asset]:
-    assert Path(asset.href).exists(), f"{asset.href} does not exist"
+    asset_path = url2pathname(asset.href, require_scheme=True)
+    assert Path(asset_path).exists(), f"{asset_path} does not exist"
     return {key: asset}
 
 
 def check_item_existance(item: pystac.Item) -> pystac.Item:
-    assert Path(item.get_self_href()).exists(), f"{item.get_self_href()} does not exist"
+    item_path = url2pathname(item.get_self_href(), require_scheme=True)
+    assert Path(item_path).exists(), f"{item_path} does not exist"
     return item
 
 
@@ -440,8 +443,11 @@ class ConformanceClassPlatformStagedOutputsTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
         response_body = response.json()
-        output_catalog = response_body.get("stac_output")
-        self.assertIsNotNone(output_catalog)
+        output_catalog_link = response_body.get("stac_output")
+        self.assertIsNotNone(output_catalog_link)
+        self.assertIsNotNone(Link.model_validate(output_catalog_link))
+
+        output_catalog = url2pathname(output_catalog_link["href"], require_scheme=True)
 
         self.assertTrue(Path(output_catalog).exists())
 

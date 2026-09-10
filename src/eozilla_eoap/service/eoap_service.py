@@ -1,4 +1,3 @@
-import json
 import multiprocessing
 import os
 from concurrent.futures import CancelledError, Future, wait
@@ -135,6 +134,29 @@ class LocalEoapService(ServiceBase, DruService):
     ) -> JobInfo:
         eoap: EoapProcess = self._get_process(process_id)
         job_id: str = str(uuid4())
+
+        # Disregard response type negotiation
+        # if process_request.response != ResponseType.document:
+        #     # NOTE: as per table 12 of OGC API - Processes - Part 1: Core:
+        #     #       When a process may have more than one output value,
+        #     #       the response type must be "document"
+        #     #       *basically added to narrow down allowed path for given
+        #     #       return value of type JobInfo and later JobResult*
+        #     raise ServiceException(
+        #         status_code=501,
+        #         detail="Returning one or more values requries the response type to be of type 'document'.",
+        #         type_id="not-implemented",
+        #     )
+
+        # NOTE: The user cannot decide how output values are embedded
+        #       into the document or what media type is used via
+        #       the format option;
+        #       While the OGC requires the server to honor this option,
+        #       The output management doesn't have access to the
+        #       process request and the service doesn't implement link-header
+        #       generation to pass data by reference
+        #       *basically added to narrow down allowed path for given
+        #       return value of type JobInfo and later JobResult*
 
         try:
             job = Job.create(
@@ -374,9 +396,7 @@ class LocalEoapService(ServiceBase, DruService):
             processDescription=OgcApplicationPackageProcessDescription(
                 process=eoap.description
             ),
-            executionUnit=CwlDescription(
-                mediaType="application/cwl", value=json.dumps(cwl, indent=2)
-            ),
+            executionUnit=CwlDescription(mediaType="application/cwl", value=cwl),
         )
 
     def _ensure_executor(self) -> ThreadPoolExecutor | ProcessPoolExecutor:

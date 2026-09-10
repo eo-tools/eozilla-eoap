@@ -1,3 +1,14 @@
+## Core Conformance Gaps
+
+The service does not adhere to all nuances of the [OGC API - Processes - Part 1: Core](https://docs.ogc.org/is/18-062r2/18-062r2.html) specification. Without claiming completeness, the conformance gaps are listed below.
+
+- The service only implements asynchronous execution mode. It's not possible for a client to negotiate synchronous execution.
+- The service only ever returns job results in document form. It's not possible for a client to negotiate raw transmission of job results.
+- The service does not implement filtering of output values. It's not possible for a client to request a subset of available output parameters.
+- The service does not implement selection of result transmission for output values and is opinioated about the transmission mode.
+    - Parameters defined as boolean, int, long, float, double or string, their corresponding array formats as well as enum parameters are returned in value mode. I.e., they're inlined into the returned JSON body.
+    - Paramters defined as File or Directory are returned in value mode (reference mode would mean a Link HTTP header) but not inlined into the returned JSON body. I.e., their value is a link to the corresponding output resources. Additionally, the `type` field for paramters of type File is never set and it's up to the user to correctly identify the MIME type of the resource.
+
 ## Deploy, Replace, Undeploy Conformance Gaps
 
 The draft specification for deployment, replacement and undeployment of application packages is not implemented in its entirety. The follwoing requirements and permissions are not implemented:
