@@ -16,6 +16,7 @@ import shapely
 
 from fiona.transform import transform_geom
 
+
 @dataclass
 class Arguments:
     inputs: List[Path]
@@ -62,8 +63,8 @@ if __name__ == "__main__":
             src_epsg = dataset.crs.to_epsg()
 
         item_geometry = transform_geom(
-                src_epsg, "EPSG:4326", json.loads(shapely.to_geojson(footprint))
-            )
+            src_epsg, "EPSG:4326", json.loads(shapely.to_geojson(footprint))
+        )
 
         item = pystac.item.Item(
             id=input_file.stem,
