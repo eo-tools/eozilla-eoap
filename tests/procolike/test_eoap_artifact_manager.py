@@ -544,6 +544,56 @@ class LocalArtifactManagerTest(TestCase):
             shutil.rmtree(local_model.location)
 
     @patch("eozilla_eoap.procolike.eoap_artifact_manager._load_remote_stac")
+    def test_stage_in_stac_local_tem(self, mock_load_stac):
+        item = pystac.Item(
+            id="test-item",
+            geometry=None,
+            bbox=None,
+            datetime=datetime.now(timezone.utc),
+            properties={},
+        )
+
+        mock_load_stac.return_value = item
+
+        process_instance_model = DirectoryStaingRequiredProcess(
+            d="file://stac.example.com/stac-item"
+        )
+
+        with TemporaryDirectory() as tdir:
+            manager = LocalArtifactManager(
+                Path(tdir),
+                "static-job-id-1",
+                process_instance_model,
+            )
+
+            manager.initialize()
+            manager.stage_in_directories()
+
+            mock_load_stac.assert_called_once()
+            mock_load_stac.assert_called_with("file://stac.example.com/stac-item")
+
+            self.assertEqual(len(manager.staged_in_directories), 1)
+
+            rebuild_process_arguments = manager.rebuild_process_arguments()
+            self.assertIsInstance(rebuild_process_arguments, dict)
+            self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["d"], dict)
+
+            local_catalog_path = rebuild_process_arguments["d"]
+            local_model = Directory(**local_catalog_path)
+            self.assertIsInstance(local_model, Directory)
+            self.assertTrue(Path(local_model.location).is_dir())
+            self.assertTrue(Path(local_model.location).exists())
+            self.assertTrue(Path(local_model.location, "catalog.json").exists())
+
+            catalog = pystac.STACObject.from_file(
+                Path(local_model.location, "catalog.json")
+            )
+            self.assertIsNone(pystac.validation.validate_all(catalog))
+
+            shutil.rmtree(local_model.location)
+
+    @patch("eozilla_eoap.procolike.eoap_artifact_manager._load_remote_stac")
     def test_stage_in_stac_itemcollection(self, mock_load_stac):
         item = pystac.Item(
             id="test-item",
@@ -575,6 +625,60 @@ class LocalArtifactManagerTest(TestCase):
 
             mock_load_stac.assert_called_once()
             mock_load_stac.assert_called_with("https://stac.example.com/stac-item")
+
+            self.assertEqual(len(manager.staged_in_directories), 1)
+
+            rebuild_process_arguments = manager.rebuild_process_arguments()
+            self.assertIsInstance(rebuild_process_arguments, dict)
+            self.assertEqual(len(rebuild_process_arguments), 1)
+            self.assertIsInstance(rebuild_process_arguments["d"], dict)
+
+            local_catalog_path = rebuild_process_arguments["d"]
+            local_model = Directory(**local_catalog_path)
+            self.assertIsInstance(local_model, Directory)
+            self.assertTrue(Path(local_model.location).is_dir())
+            self.assertTrue(Path(local_model.location).exists())
+            self.assertTrue(Path(local_model.location, "catalog.json").exists())
+
+            catalog = pystac.STACObject.from_file(
+                Path(local_model.location, "catalog.json")
+            )
+            self.assertIsNone(pystac.validation.validate_all(catalog))
+
+            shutil.rmtree(local_model.location)
+
+    @patch("eozilla_eoap.procolike.eoap_artifact_manager._load_remote_stac")
+    def test_stage_in_stac_local_itemcollection(self, mock_load_stac):
+        item = pystac.Item(
+            id="test-item",
+            geometry=None,
+            bbox=None,
+            datetime=datetime.now(timezone.utc),
+            properties={},
+        )
+
+        item_collection = pystac.ItemCollection(
+            [item],
+        )
+
+        mock_load_stac.return_value = item_collection
+
+        process_instance_model = DirectoryStaingRequiredProcess(
+            d="file://stac.example.com/stac-item"
+        )
+
+        with TemporaryDirectory() as tdir:
+            manager = LocalArtifactManager(
+                Path(tdir),
+                "static-job-id-1",
+                process_instance_model,
+            )
+
+            manager.initialize()
+            manager.stage_in_directories()
+
+            mock_load_stac.assert_called_once()
+            mock_load_stac.assert_called_with("file://stac.example.com/stac-item")
 
             self.assertEqual(len(manager.staged_in_directories), 1)
 
