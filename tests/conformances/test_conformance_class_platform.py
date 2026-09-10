@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Dict
 from unittest import TestCase
 from urllib.request import url2pathname
+
 import pystac
 import yaml
 from fastapi import Response
@@ -9,9 +10,9 @@ from fastapi.testclient import TestClient
 from gavicore.models import (
     DataType,
     InputDescription,
+    Link,
     OutputDescription,
     ProcessDescription,
-    Link,
     Schema,
 )
 from gavicore.util.testing import set_env

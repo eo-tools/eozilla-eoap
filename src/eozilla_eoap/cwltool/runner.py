@@ -2,7 +2,7 @@ import logging
 import threading
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from cwl_utils.types import CWLObjectType
 from cwltool.context import RuntimeContext
@@ -272,7 +272,7 @@ class CwlToolRunner(Runner):
                     raise JobCancelledException from e
                 else:
                     raise e
-            except Exception as e:
+            except Exception:
                 raise
 
         return workflow_result

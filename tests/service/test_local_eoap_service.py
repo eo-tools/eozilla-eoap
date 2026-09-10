@@ -4,14 +4,17 @@
 
 import asyncio
 import os
+import shutil
 from concurrent.futures import Future
 from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest import IsolatedAsyncioTestCase, TestCase
 
 import fastapi
 import pytest
-
+import yaml
 from gavicore.models import (
     Capabilities,
     ConformanceDeclaration,
@@ -24,20 +27,15 @@ from gavicore.models import (
     ProcessRequest,
 )
 from gavicore.util.testing import set_env
-from procodile import Job, Process
+from procodile import Job
 from wraptile.exceptions import ServiceException
 from wraptile.main import app
 from wraptile.provider import ServiceProvider, get_service
 
 from eozilla_eoap.cwltool.runner import CwlToolRunner
-from eozilla_eoap.procolike import LocalEaopRegistry, EoapProcess
+from eozilla_eoap.procolike import EoapProcess, LocalEaopRegistry
 from eozilla_eoap.service import LocalEoapService
 from eozilla_eoap.service.eoap_service import _run_imported_job
-
-from tempfile import TemporaryDirectory
-from pathlib import Path
-import yaml
-import shutil
 
 
 class LocalEoapServiceSetupTest(TestCase):

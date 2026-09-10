@@ -1,4 +1,4 @@
-from typing import Literal, TypeVar
+from typing import List, Literal, TypeVar
 from unittest import TestCase
 
 from cwl_utils.parser.cwl_v1_2 import Directory as CwlDirectory
@@ -18,7 +18,6 @@ from pydantic import BaseModel, Field
 
 from eozilla_eoap.procolike.eoap_process import (
     Directory,
-    EoapProcess,
     File,
     _resolve_ogc_schema_from_cwl_utils,
     _resolve_to_pydantic_tuple,
