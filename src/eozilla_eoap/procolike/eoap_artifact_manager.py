@@ -581,21 +581,16 @@ def _(stac_obj: Catalog) -> Catalog:
     Args:
         stac_obj (Catalog): In-memory representation of STAC Catalog.
 
-    Raises:
-        RuntimeWarning: Always Raised since stage-in of an entire STAC Catalog
-            seems unreasonable.
-
     Returns:
         Catalog: Local path to staged-in STAC Catalog.
     """
-    raise RuntimeWarning("Using a catlog seems unreasonable, disallowed.")
 
     out_dir = TemporaryDirectory(prefix="cwl-input-staging-", delete=False).name
 
     catalog: Catalog = stac_obj.full_copy()
     catalog.set_self_href(out_dir)
     catalog.normalize_hrefs(str(out_dir))
-    catalog.save()
+    catalog.save(catalog_type=pystac.CatalogType.SELF_CONTAINED)
 
     return catalog
 
