@@ -1,7 +1,7 @@
 # Example Earth Observation Application Packages (EOAPs)
 
 !!! important
-    The files referenced when deploying processes reference those in the `example-eoaps` directory located at the root of this repository ([https://github.com/eo-tools/eozilla-eoap](https://github.com/eo-tools/eozilla-eoap)). Alternatiely, you can follow the hyperlinks referencing the CWL workflows below.
+    The files referenced when deploying processes reference those in the `example-eoaps` directory located at the root of this repository ([https://github.com/eo-tools/eozilla-eoap](https://github.com/eo-tools/eozilla-eoap)). Alternatively, you can follow the hyperlinks referencing the CWL workflows below.
 
 ## Sleep EOAP
 
@@ -12,7 +12,7 @@ The sleep EOAP is a simple process that calls a Python function that sleeps for 
 
 ### Deploy and Execute Example
 
-The process can be deployed from the command line with the following command, assuming the server is listenting on `127.0.0.1:8008`.
+The process can be deployed from the command line with the following command, assuming the server is listening on `127.0.0.1:8008`.
 
 ```console
 curl -X 'POST' \
@@ -45,7 +45,7 @@ The primes EOAP is a simple process that calculates prime numbers between a lowe
 
 ### Deploy and Execute Example
 
-The process can be deployed from the command line with the following command, assuming the server is listenting on `127.0.0.1:8008`.
+The process can be deployed from the command line with the following command, assuming the server is listening on `127.0.0.1:8008`.
 
 ```console
 curl -X 'POST' \
@@ -76,7 +76,7 @@ The echo EOAP is a simple process that simply echos the user's input to a files 
 
 ### Deploy and Execute Example
 
-The process can be deployed from the command line with the following command, assuming the server is listenting on `127.0.0.1:8008`.
+The process can be deployed from the command line with the following command, assuming the server is listening on `127.0.0.1:8008`.
 
 ```console
 curl -X 'POST' \
@@ -109,7 +109,7 @@ The cat EOAP is a simple process that cat the contents of a user-supplied file t
 
 ### Deploy and Execute Example
 
-The process can be deployed from the command line with the following command, assuming the server is listenting on `127.0.0.1:8008`.
+The process can be deployed from the command line with the following command, assuming the server is listening on `127.0.0.1:8008`.
 
 ```console
 curl -X 'POST' \
@@ -142,7 +142,7 @@ The water bodies/OTSU workflow is process that generates a water mask by using t
 
 ### Deploy and Execute Example
 
-The process can be deployed from the command line with the following command, assuming the server is listenting on `127.0.0.1:8008`.
+The process can be deployed from the command line with the following command, assuming the server is listening on `127.0.0.1:8008`.
 
 ```console
 curl -X 'POST' \
@@ -170,13 +170,13 @@ curl -X 'POST' \
 
 ## K-Means Clustering EOAP
 
-This workflow takes a STAC item or STAC item collection as input, creates multi-band stacks according to the specified `band_list` argument, creates k-means clustering results independently and renders previews of the results as well as some non-sensical statistics summary. It's main goal is not to implement a sophisticated or novel processing but rather illustrate how multi-step EOAP may be defined (and to that extent test process cancellation). Note, that the server implementation present only interacts with the entrypoint apart from validating presence of some fields.
+This workflow takes a STAC item or STAC item collection as input, creates multi-band stacks according to the specified `band_list` argument, creates k-means clustering results independently and renders previews of the results as well as some nonsensical statistics summary. It's main goal is not to implement a sophisticated or novel processing but rather illustrate how multi-step EOAP may be defined (and to that extent test process cancellation). Note, that the server implementation present only interacts with the entry point apart from validating presence of some fields.
 
 By registering the accompanying [CWL workflow](https://raw.githubusercontent.com/eo-tools/eozilla-eoap/refs/heads/main/example-eoaps/kmeans/kmeans-workflow.cwl), the process will be available at `/processes/kmeans-workflow`.
 
 ### Deploy and Execute Example
 
-The process can be deployed from the command line with the following command, assuming the server is listenting on `127.0.0.1:8008`.
+The process can be deployed from the command line with the following command, assuming the server is listening on `127.0.0.1:8008`.
 
 ```console
 curl -X 'POST' \

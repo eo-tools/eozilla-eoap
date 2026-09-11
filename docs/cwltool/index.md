@@ -3,4 +3,4 @@
 1. validating user-submitted EAOPs encoded in self-contained CWL documents and
 1. steering the execution of the derived OGC Processes on the same machine that hosts the server.
 
-For a cleaner integration of the functionality supplied by the `cwltool`, especially with regards to retainment of logs, data stage-in/stage-out and workflow cancellation, certain classes and methods had to be adapted accordingly. Simoultaniously, the `cwltool` module within this project serves as an implementation of the [`Runner`][eozilla_eoap.interfaces.Runner] base class.
+For a cleaner integration of the functionality supplied by the `cwltool`, especially with regards to preservation of logs, data stage-in/stage-out and workflow cancellation, certain classes and methods had to be adapted accordingly. Simultaneously, the `cwltool` module within this project serves as an implementation of the [`Runner`][eozilla_eoap.interfaces.Runner] base class.

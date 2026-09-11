@@ -2,9 +2,9 @@ The service sub-module provides the actual DRU implementation as well as means t
 
 To start a local service instance, activate the Pixi environment and run `wraptile run -- eozilla_eoap.main:service`. The command line interface of `wraptile` is documented [here](https://eo-tools.github.io/eozilla/wraptile/).
 
-## Example Usage Scenario Walkthrough
+## Example Usage Scenario Walk-through
 
-The following section illustrates how a user can interact with a running server instance. Configuration parametery may easily be changed by adapting the module named above which is copied verbatim here for clarity. The EOAPs referenced are detailed in the [Example EOAPs](examples.md) section.
+The following section illustrates how a user can interact with a running server instance. Configuration parameters may easily be changed by adapting the module named above which is copied verbatim here for clarity. The EOAPs referenced are detailed in the [Example EOAPs](examples.md) section.
 
 ```python
 from pathlib import Path
@@ -111,7 +111,7 @@ curl -X 'GET' \
 
 ### Process Description
 
-The formal description of such a mutable process such as the one deployed can be queried by sending a GET request to the `/processes/{processId}/package` endpoint. This can be useful e.g. to see the possible/mandatory process argument descriptions. Note that the respone is truncated here since the OGC Application Package format includes the EOAP definition itself as well.
+The formal description of such a mutable process such as the one deployed can be queried by sending a GET request to the `/processes/{processId}/package` endpoint. This can be useful e.g. to see the possible/mandatory process argument descriptions. Note that the response is truncated here since the OGC Application Package format includes the EOAP definition itself as well.
 
 ```bash title="process description request"
 curl -X 'GET' \
@@ -268,7 +268,7 @@ Job dismissal can be used both to interrupt a running process and to remove job 
 
 !!! warning "Job Dismissal is Synchronous"
 
-    The service allows cancellation of processes before they finish via the dismiss endpoint. The only point where an application unaware of such context-clues can be interrupted is before a new job step. Long running steps may delay the dismissal of running process indefinitively. In combination with the circumstance that cancelled processes are awaited for, the user may experience severe delays after requesting cancellation of a process.
+    The service allows cancellation of processes before they finish via the dismiss endpoint. The only point where an application unaware of such context-clues can be interrupted is before a new job step. Long running steps may delay the dismissal of running process indefinitely. In combination with the circumstance that cancelled processes are awaited for, the user may experience severe delays after requesting cancellation of a process.
 
 ```bash title="job dismissal request"
 curl -X 'DELETE' \
@@ -289,7 +289,7 @@ curl -X 'DELETE' \
 
 ### Job Results
 
-After successfull execution while the job is not dismissed and the server not restarted, the process output according to the original EOAP definition can be accessed with a request to `/jobs/{jobId}/results`.
+After successful execution while the job is not dismissed and the server not restarted, the process output according to the original EOAP definition can be accessed with a request to `/jobs/{jobId}/results`.
 
 ```bash title="job results request"
 curl -X 'GET' \
