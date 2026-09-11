@@ -42,7 +42,7 @@ Furthermore, the following requirements and recommendations are not checked duri
 
 When these are violated by a supplied EOAP, possible errors are only observable during runtime.
 
-Requirements mandating the existence of certain keys are interpreted to mean that the corresponding value should contain valid data. E.g. the requirement `req/app-pck/clt` mandates, that every instance of CWL's CommandLineTool class must contain the elements id, baseCommand, inputs, requirements and DockerRequirement. While CWL allows to specify an empty array for the baseCommand field, which is treated equivalently to not specifying it, this and other comparable requirements are interpreted to mean "this field must have a non-empty value" instead of "this field must be present in the text representation of the EOAP"[^key_check]. This results in the considerable restriction of not being able to supply docker images with an `ENTRYPOINT`.
+Requirements mandating the existence of certain keys are interpreted to mean that the corresponding value should contain valid data. E.g. the requirement `req/app-pck/clt` mandates, that every instance of CWL's CommandLineTool class must contain the elements id, baseCommand, inputs, requirements and DockerRequirement. While CWL allows to specify an empty array for the baseCommand field, which is treated equivalently to not specifying it, this and other comparable requirements are interpreted to mean "this field must have a non-empty value" instead of "this field must be present in the text representation of the EOAP"[^key_check]. This results in the considerable restriction of not being able to supply docker images with an `ENTRYPOINT` as intended: If an entrypoint is specified, it must be able to accept whatever is specified in the CWL's `baseCommand` field as well. Directly passing CLI arguments to it does not conform to the EOAP structure mandated by the OGC.
 
 [^key_check]: The rationale being that otherwise, requiring the field to be present seems unreasonable when the field's can denote the absence of said field.
 
@@ -50,12 +50,10 @@ Requirements mandating the existence of certain keys are interpreted to mean tha
 
 During deployment or replacement of a process using an EOAP, parameters representing earth observation input data must be supplied using the CWL type "Directory".
 
-These parameters are converted to parameters of type "string" for OGC's input description and is expected that the user supplies a URL pointing to a STAC Item or STAC Itemcollection. The input is made available to the process by creating a STAC Catalog containing the supplied items in a directory with a STAC Catalog named "catalog.json". Since the best practice document allows implementations to not download the STAC Assets themselves[^stac_staging] but only make the STAC "representation" locally available, the application package itself must still be able to
+These parameters are converted to parameters of type "string" for OGC's input description and is expected that the user supplies a URL pointing to a STAC Item, STAC Itemcollection or STAC Catalog (in case a local file is referenced, it must be on the same file system as the running service). The input is made available to the process by creating a STAC Catalog named "catalog.json" containing the supplied items in a directory. Since the best practice document allows implementations to not download the STAC Assets themselves[^stac_staging] but only make the STAC "representation" locally available, the application package itself must still be able to
 
 1. Parse STAC Catalogs
 1. Download data pointed to by asset's "href" fields in case of remote files.
-
-Supplying entire STAC Catalogs from the get-go is not allowed.
 
 Conversely, while at a minimum discouraged by the best practice guidelines, the current implementation does not try to assign meaning to parameters of type "File" which makes it possible to supply URLs pointing to earth observation data which would then be downloaded directly.
 

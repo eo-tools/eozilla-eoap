@@ -6,6 +6,8 @@ To start a local service instance, activate the Pixi environment and run `wrapti
 
 The following section illustrates how a user can interact with a running server instance. Configuration parameters may easily be changed by adapting the module named above which is copied verbatim here for clarity. The EOAPs referenced are detailed in the [Example EOAPs](examples.md) section.
 
+The interactions below are performed deliberately using cURL to highlight the endpoints addressed and HTTP methods and headers used/set. A more ergonomic interaction can be achieved using the [`cuiman`](https://eo-tools.github.io/eozilla/cuiman/) API client easily installable via PyPi: `pip install cuiman`. See the project's documentation for details on how to set up and use the client.
+
 ```python
 from pathlib import Path
 
@@ -113,6 +115,12 @@ curl -X 'GET' \
 
 The formal description of such a mutable process such as the one deployed can be queried by sending a GET request to the `/processes/{processId}/package` endpoint. This can be useful e.g. to see the possible/mandatory process argument descriptions. Note that the response is truncated here since the OGC Application Package format includes the EOAP definition itself as well.
 
+!!! info "Conversion of CWL's `Directory` Types"
+
+    The returned JSON document below hightlights an important step that occurs when translating from CWL to OGC Processes: **CWL's `Directory` types are re-written to fields accepting URLs.**
+
+    This means, that while the software executed still finds a directory present in its working directory, you as the user provide a URL (with the HTTP, HTTPS or file schema) to the input data. The service comes with an artifact manager that is responsible for the data stage-in and generates a local STAC Catalog named `catalog.json`. Note however, that **no assets are actually downloaded**. It's still your responsiblity to do so.
+
 ```bash title="process description request"
 curl -X 'GET' \
   'http://127.0.0.1:8008/processes/kmeans-workflow/package' \
@@ -128,6 +136,12 @@ curl -X 'GET' \
       "id": "kmeans-workflow",
       "version": "0.0.1",
       "mutable": true,
+      "jobControlOptions": [
+        "async-execute"
+      ],
+      "outputTransmission": [
+        "value"
+      ],
       "inputs": {
         "stac_url": {
           "title": "Input STAC URL",
@@ -137,14 +151,36 @@ curl -X 'GET' \
           "schema": {
             "type": "string",
             "nullable": false,
-            "format": "url"
+            "format": "url",
+            "oneOf": [
+              {
+                "format": "url",
+                "contentMediaType": "application/json",
+                "contentSchema": "https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json"
+              },
+              {
+                "format": "url",
+                "contentMediaType": "application/geo+json",
+                "contentSchema": "https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/item-spec/json-schema/item.json"
+              },
+              {
+                "format": "url",
+                "contentMediaType": "application/json",
+                "contentSchema": "https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml"
+              },
+              {
+                "format": "url",
+                "contentMediaType": "application/geo+json",
+                "contentSchema": "https://raw.githubusercontent.com/radiantearth/stac-api-spec/refs/heads/main/fragments/itemcollection/openapi.yaml"
+              }
+            ]
           }
         },
         "band_selection": {
           "title": "Band selection to use",
           "description": "List of band names (used in STAC catalog as common name) to extract/\"manifest\"",
           "minOccurs": 0,
-          "maxOccurs": "unbounded",
+          "maxOccurs": 1,
           "schema": {
             "type": "array",
             "default": [
@@ -178,7 +214,19 @@ curl -X 'GET' \
           "schema": {
             "type": "string",
             "nullable": false,
-            "format": "url"
+            "format": "url",
+            "oneOf": [
+              {
+                "format": "url",
+                "contentMediaType": "application/json",
+                "contentSchema": "https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/catalog-spec/json-schema/catalog.json"
+              },
+              {
+                "format": "url",
+                "contentMediaType": "application/geo+json",
+                "contentSchema": "https://raw.githubusercontent.com/radiantearth/stac-spec/refs/heads/master/catalog-spec/json-schema/catalog.json"
+              }
+            ]
           }
         },
         "classification_previews": {
@@ -220,6 +268,10 @@ curl -X 'GET' \
 
 To execute a particular process, a POST request must be made to the `/processes/{processId}/execute` endpoint with the process arguments encoded as JSON sent in the body.
 
+!!! info
+
+    The field `stac_url` below could have also been populated using a local (on the machine the service runs on) JSON document. In this case, a `file://...` schema should be used. Additionally, this requires that all `href` entries are absolute paths.
+
 ```bash title="process execution request"
 curl -X 'POST' \
     'http://127.0.0.1:8008/processes/kmeans-workflow/execution' \
@@ -242,13 +294,22 @@ curl -X 'POST' \
 }
 ```
 
+!!! note "Follow-along more easily"
+
+    To follow the following sections more easily, create an environment variable that stores the `jobID` returned above. E.g.:
+
+    ```bash
+    JOB_ID="bd60bada-9528-4526-acbf-ca3732558b55"
+    ```
+
+
 ### Job Information
 
 Information about jobs during and after execution can be queried with a request to the `/jobs/{jobId}` endpoint
 
 ```bash title="job information request"
 curl -X 'GET' \
-    'http://127.0.0.1:8008/jobs/bd60bada-9528-4526-acbf-ca3732558b55' \
+    "http://127.0.0.1:8008/jobs/$JOB_ID" \
     -H 'accept: application/json'
 ```
 
@@ -272,7 +333,7 @@ Job dismissal can be used both to interrupt a running process and to remove job 
 
 ```bash title="job dismissal request"
 curl -X 'DELETE' \
-    'http://127.0.0.1:8008/jobs/bd60bada-9528-4526-acbf-ca3732558b55' \
+    "http://127.0.0.1:8008/jobs/$JOB_ID" \
     -H 'accept: application/json'
 ```
 
@@ -293,7 +354,7 @@ After successful execution while the job is not dismissed and the server not res
 
 ```bash title="job results request"
 curl -X 'GET' \
-    'http://127.0.0.1:8008/jobs/00f2228c-30f2-4069-b1ff-462721524947/results' \
+    "http://127.0.0.1:8008/jobs/$JOB_ID/results" \
     -H 'accept: application/json'
 ```
 

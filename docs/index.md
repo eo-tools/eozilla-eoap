@@ -1,5 +1,17 @@
 # Eozilla's Sample Implementation for DRU and EOAPs
 
+Earth Observation Application Package are a special encoding of processes using [CWL](https://www.commonwl.org/) in order to allow portable and reproducable execution of software that, possibly, processes earth observational data. At the time of writing, software support for their development and execution is limited and while implementation exist (e.g. [`zoo-project`](https://zoo-project.org/)), there's a lack of easy-to use services enabling EOAP execution.
+
+Eozilla's EOAP extension is meant to serve as a local test bed for developing Earth Observation Application Packages and test them in an environment that comes close to a real service platform. While no specification (OGC API - Processes - Part 1: Core, OGC API - Processes - Part 2: DRU, OGC Best Practice for Earth Observation Application Package) is implemented in its entirety, the resulting service is complete enough to serve above-mentioned purpose.
+
+The main benefits of using this project for testing your EOAPs are:
+
+- `eozilla-eoap` uses few dependencies and the Pixi project manager, thus it's easy to install and getting started. See the [Service](./service/index.md) documentation for instructions.
+- Execution in a "service-like" environment that resembles a real service platform more closely compared to manual execution with CWL runners like `cwltool`.
+- Integration with the [`cuiman`](https://eo-tools.github.io/eozilla/cuiman/) API client allows more ergonomic interaction with the service compared to execution of raw cURL commands form the command line. Additionally, the webserver provides an in-browser interface through swagger.
+- Partial validation of the supplied EOAP according to the requirements posed by the OGC. See the [Restrictions](./restrictions.md) page for an overview of what requirements are checked and which are not.
+- To facilitate easy testing, local STAC Items, STAC ItemCollections and STAC Catalogs are accepted as input by supplying the service with a file-URL (`file://...`). This requires that the file pointed to is accessible by the service and that all `href` entries are absolute file paths.
+
 ## OGC API - Processes - Part 2: Deploy, Replace, Undeploy
 
 The "OGC API - Processes - Part 2: Deploy, Replace, Undeploy" draft specification defines the behaviour and operations necessary for a server to accept new OGC Processes, replace existing ones and remove them. These operations are made available by allowing new HTTP operations compared to the core specification as well as adding a new endpoint, the overview below is copied from the [online version](https://docs.ogc.org/DRAFTS/20-044.html) of the draft.

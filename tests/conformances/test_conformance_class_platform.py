@@ -354,9 +354,12 @@ class ConformanceClassPlatformStagedInputsTest(TestCase):
             self.client.delete(f"/processes/{id_}")
 
     def test_abstract_test_11(self):
-        self.skipTest(
-            "The requested STAC Extension (single-file-stac) is deprecated, closest replacement are STAC Items and STAC ItemCollections."
-        )
+        self.skipTest((
+            "The requested STAC Extension (single-file-stac) is deprecated,"
+            "closest replacement is the STAC ItemCollection as it also maps "
+            "to GeoJSON FeatureCollections. The implementation accpets other"
+            "STAC inputs as well as per BP document."
+        ))
 
     def test_abstract_test_12(self):
         response: Response = self.client.post(

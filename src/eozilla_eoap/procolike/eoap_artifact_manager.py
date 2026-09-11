@@ -26,6 +26,7 @@ class LocalArtifactManager:
     """Resolving remote input files and manage output directories
 
     The LocalArtifactManager is responsible for:
+
     - create the runs directory and it's subdirectory for a given Job
     - resolve remote files to local ones, i.e. download them
     - patch the instance model created based off of process
@@ -41,6 +42,7 @@ class LocalArtifactManager:
     of either 'classes' and thus factored out.
 
     Notes:
+
     - Rationale for downloading files: "At job submission, the inputs passed
       as references (as HTTP link, S3 link, etc.) must be fetched and made
       available for processing by executing the CWL document." While this
@@ -160,6 +162,7 @@ class LocalArtifactManager:
         """Stage-Out Logs and Results of Workflow/Process execution.
 
         Notes:
+
         - The `workflow_results` input argument is copied, changes are
           not visible on the original value.
 
@@ -207,8 +210,8 @@ class LocalArtifactManager:
         Notes:
         - The `workflow_results` input argument is copied, changes are
           not visible on the original value.
-        - For STAC catalogs, only the `catalog.json` is returned which
-          is sufficient to discover all related output data.
+        - For STAC catalogs, only the `catalog.json` is returned to the user
+          which is sufficient to discover all related output data.
 
         Args:
             results (Dict[str, Any]): Workflow/Process results returned by executor.
