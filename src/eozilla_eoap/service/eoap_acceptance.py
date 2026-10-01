@@ -50,9 +50,12 @@ async def load_and_validate_from_body(request: Request) -> dict:
             type_id="bad-request",
         )
 
-    if not _is_valid_as_eoap(loaded_cwl):
+    is_valid, validation_details = _is_valid_as_eoap(loaded_cwl)
+    if not is_valid:
         raise ServiceException(
-            status_code=422, detail="Supplied EOAP is not valid.", type_id="bad-request"
+            status_code=422,
+            detail="Supplied EOAP is not valid. Failed requirements: " +
+                   str(", ".join(validation_details)), type_id="bad-request"
         )
 
     return loaded_cwl
@@ -130,7 +133,7 @@ def _is_valid_as_cwl(content: dict) -> bool:
     return not bool(result)
 
 
-def _is_valid_as_eoap(content: dict) -> bool:
+def _is_valid_as_eoap(content: dict) -> tuple[bool, list[str]]:
     """Validate an EOAP against OGC's Requirements
 
     The OGC Best Practice Guideline for EOAPs defines several
@@ -146,22 +149,29 @@ def _is_valid_as_eoap(content: dict) -> bool:
         w (str | None, optional): Optional workflow entrypoint. Defaults to None.
 
     Returns:
-        bool: True if EOAP is valid, False otherwise.
+        tuple: first element is a bool, True if EOAP is valid, False otherwise.
+               Second element is a list of strings giving details of validation
+               failure if first element is False, ``None`` otherwise.
     """
     cwl_object = parser.load_document(content, load_all=True)
 
-    eoap_requirements_passed = [
-        check_eoap_requirement_07(cwl_object),
-        check_eoap_requirement_08(cwl_object),
-        check_eoap_requirement_09(cwl_object),
-        check_eoap_requirement_10(cwl_object),
-        check_eoap_requirement_11(content),
-    ]
+    results = {
+        "7": check_eoap_requirement_07(cwl_object),
+        "8": check_eoap_requirement_08(cwl_object),
+        "9": check_eoap_requirement_09(cwl_object),
+        "10": check_eoap_requirement_10(cwl_object),
+        "11": check_eoap_requirement_11(content),
+    }
+    all_passed = all(r[0] for r in results.values())
+    def make_message(req, detail):
+        return f"{req}: {detail}" if detail else req
 
-    return all(eoap_requirements_passed)
+    messages = [make_message(k, v[1]) for k, v in results.items() if not v[0]]
+
+    return all_passed, messages
 
 
-def check_eoap_requirement_07(cwl_object: list) -> bool:
+def check_eoap_requirement_07(cwl_object: list) -> tuple[bool, str | None]:
     """Test req/app-pck/cwl
 
     The Application Package SHALL be a valid CWL document with
@@ -175,10 +185,10 @@ def check_eoap_requirement_07(cwl_object: list) -> bool:
     """
     return any(map(lambda x: x.class_ == "Workflow", cwl_object)) and any(
         map(lambda x: x.class_ == "CommandLineTool", cwl_object)
-    )
+    ), None
 
 
-def check_eoap_requirement_08(cwl_object: list) -> bool:
+def check_eoap_requirement_08(cwl_object: list) -> tuple[bool, str | None]:
     """Test req/app-pck/clt
 
     The Application Package CWL CommandLineTool classes SHALL
@@ -209,21 +219,25 @@ def check_eoap_requirement_08(cwl_object: list) -> bool:
     requirements: List[parser.ProcessRequirement] = map(lambda x: x.requirements, clis)
     for req in requirements:
         if req is None:
-            return False
+            return False, None
         all_have_docker_requirement = all_have_docker_requirement and any(
             map(lambda x: isinstance(x, parser.DockerRequirement), req)
         )
 
-    return (
-        all_have_ids
-        and all_have_base_command
-        and all_have_inputs
-        and all_have_requirements
-        and all_have_docker_requirement
-    )
+    checks = [
+        all_have_ids,
+        all_have_base_command,
+        all_have_inputs,
+        all_have_requirements,
+        all_have_docker_requirement
+    ]
+    names = ["id", "baseCommand", "inputs", "requirements", "DockerRequirement"]
+    message = ", ".join([names[i] for i in range(len(checks)) if not checks[i]])
+
+    return all(checks), (message if message else None)
 
 
-def check_eoap_requirement_09(cwl_object: list) -> bool:
+def check_eoap_requirement_09(cwl_object: list) -> tuple[bool, str | None]:
     """req/app-pck/wf
 
     The Application Package CWL Workflow class SHALL contain
@@ -241,10 +255,10 @@ def check_eoap_requirement_09(cwl_object: list) -> bool:
     workflows: List[
         parser.cwl_v1_0.Workflow | parser.cwl_v1_1.Workflow | parser.cwl_v1_2.Workflow
     ] = list(filter(lambda x: x.class_ == "Workflow", cwl_object))
-    return all(map(lambda x: x.id and x.label and x.doc, workflows))
+    return all(map(lambda x: x.id and x.label and x.doc, workflows)), None
 
 
-def check_eoap_requirement_10(cwl_object: list) -> bool:
+def check_eoap_requirement_10(cwl_object: list) -> tuple[bool, str | None]:
     """Test req/app-pck/wf-inputs
 
     The Application Package CWL Workflow class "inputs" fields
@@ -268,12 +282,12 @@ def check_eoap_requirement_10(cwl_object: list) -> bool:
     )
     for workflow_input in chain(*workflow_inputs):
         if not (workflow_input.id and workflow_input.label and workflow_input.doc):
-            return False
+            return False, None
 
-    return True
+    return True, None
 
 
-def check_eoap_requirement_11(cwl_object: dict) -> bool:
+def check_eoap_requirement_11(cwl_object: dict) -> tuple[bool, str | None]:
     """Test req/app-pck/metadata
 
     The Application Package CWL Workclass classes SHALL
@@ -291,12 +305,12 @@ def check_eoap_requirement_11(cwl_object: dict) -> bool:
         bool: True if requirement was passed.
     """
     if not isinstance(cwl_object, dict):
-        return False
+        return False, "CWL object is not a dictionary."
 
     namespaces: dict = cwl_object.get("$namespaces")
 
     if namespaces is None or type(namespaces) is not dict:
-        return False
+        return False, "No dict-typed namespaces object present."
 
     schema_org_key: str = ""
 
@@ -306,6 +320,10 @@ def check_eoap_requirement_11(cwl_object: dict) -> bool:
             break
 
     if not schema_org_key:
-        return False
+        return False, "No schema.org link in namespaces object."
 
-    return cwl_object.get(schema_org_key + ":version") is not None
+    if cwl_object.get(schema_org_key + ":version") is None:
+        return False, f"No {schema_org_key}:version specified."
+
+    return True, None
+
