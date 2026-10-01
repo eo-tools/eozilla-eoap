@@ -127,13 +127,17 @@ class EoapAcceptanceTest(TestCase):
 
         del loaded_cwl["s:version"]
 
-        self.assertFalse(_is_valid_as_eoap(loaded_cwl))
+        validity = _is_valid_as_eoap(loaded_cwl)
+        self.assertFalse(validity[0])
+        self.assertEqual(len(validity[1]), 1)
 
     def test_valid_eoap_is_true(self):
         with open(Path(self.static_resources_path, "primes-workflow.cwl"), "rt") as f:
             loaded_cwl = yaml.safe_load(f)
 
-        self.assertTrue(_is_valid_as_eoap(loaded_cwl))
+        validity = _is_valid_as_eoap(loaded_cwl)
+        self.assertTrue(validity[0])
+        self.assertEqual(validity[1], [])
 
     # Requirement 7: req/app-pck/cwl
     # NOTE: The checks don't actually incorporate testing for validity of supplied CWL;
@@ -153,7 +157,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertFalse(check_eoap_requirement_07(cwl_objects))
+        self.assertFalse(check_eoap_requirement_07(cwl_objects)[0])
 
     def test_req_07_missing_cli(self):
         cwl_objects: List[cwl_v1_2.Workflow | cwl_v1_2.CommandLineTool] = [
@@ -171,7 +175,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertFalse(check_eoap_requirement_07(cwl_objects))
+        self.assertFalse(check_eoap_requirement_07(cwl_objects)[0])
 
     def test_req_07_valid_intput(self):
         cwl_objects: List[cwl_v1_2.Workflow | cwl_v1_2.CommandLineTool] = [
@@ -200,7 +204,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertTrue(check_eoap_requirement_07(cwl_objects))
+        self.assertTrue(check_eoap_requirement_07(cwl_objects)[0])
 
     # Requirement 8: req/app-pck/clt
     def test_req_08_missing_base_command(self):
@@ -215,7 +219,7 @@ class EoapAcceptanceTest(TestCase):
             )
         ]
 
-        self.assertFalse(check_eoap_requirement_08(cwl_objects))
+        self.assertFalse(check_eoap_requirement_08(cwl_objects)[0])
 
     def test_req_08_missing_requirements(self):
         cwl_objects: List[cwl_v1_2.CommandLineTool] = [
@@ -229,7 +233,7 @@ class EoapAcceptanceTest(TestCase):
             )
         ]
 
-        self.assertFalse(check_eoap_requirement_08(cwl_objects))
+        self.assertFalse(check_eoap_requirement_08(cwl_objects)[0])
 
     def test_req_08_missing_docker_requirement(self):
         cwl_objects: List[cwl_v1_2.CommandLineTool] = [
@@ -244,7 +248,7 @@ class EoapAcceptanceTest(TestCase):
             )
         ]
 
-        self.assertFalse(check_eoap_requirement_08(cwl_objects))
+        self.assertFalse(check_eoap_requirement_08(cwl_objects)[0])
 
     def test_req_08_complete_command_line_tool(self):
         cwl_objects: List[cwl_v1_2.CommandLineTool] = [
@@ -259,7 +263,7 @@ class EoapAcceptanceTest(TestCase):
             )
         ]
 
-        self.assertTrue(check_eoap_requirement_08(cwl_objects))
+        self.assertTrue(check_eoap_requirement_08(cwl_objects)[0])
 
     def test_req_08_list_contains_only_valid(self):
         cwl_objects: List[cwl_v1_2.CommandLineTool] = [
@@ -283,7 +287,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertTrue(check_eoap_requirement_08(cwl_objects))
+        self.assertTrue(check_eoap_requirement_08(cwl_objects)[0])
 
     def test_req_08_list_contains_one_invalid(self):
         cwl_objects: List[cwl_v1_2.CommandLineTool] = [
@@ -305,7 +309,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertFalse(check_eoap_requirement_08(cwl_objects))
+        self.assertFalse(check_eoap_requirement_08(cwl_objects)[0])
 
     # Requirement 09: req/app-pck/wf
     def test_req_09_missing_label(self):
@@ -323,7 +327,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertFalse(check_eoap_requirement_09(cwl_objects))
+        self.assertFalse(check_eoap_requirement_09(cwl_objects)[0])
 
     def test_req_09_missing_doc(self):
         cwl_objects: List[cwl_v1_2.Workflow] = [
@@ -340,7 +344,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertFalse(check_eoap_requirement_09(cwl_objects))
+        self.assertFalse(check_eoap_requirement_09(cwl_objects)[0])
 
     def test_req_09_complete_input_fields(self):
         cwl_objects: List[cwl_v1_2.Workflow] = [
@@ -358,7 +362,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertTrue(check_eoap_requirement_09(cwl_objects))
+        self.assertTrue(check_eoap_requirement_09(cwl_objects)[0])
 
     def test_req_09_list_contains_only_valid(self):
         cwl_objects: List[cwl_v1_2.Workflow] = [
@@ -388,7 +392,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertTrue(check_eoap_requirement_09(cwl_objects))
+        self.assertTrue(check_eoap_requirement_09(cwl_objects)[0])
 
     def test_req_09_list_contains_one_invalid(self):
         cwl_objects: List[cwl_v1_2.Workflow] = [
@@ -416,7 +420,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertFalse(check_eoap_requirement_09(cwl_objects))
+        self.assertFalse(check_eoap_requirement_09(cwl_objects)[0])
 
     # Requirement 10: req/app-pck/wf-inputs
     def test_req_10_missing_label(self):
@@ -435,7 +439,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertFalse(check_eoap_requirement_10(cwl_objects))
+        self.assertFalse(check_eoap_requirement_10(cwl_objects)[0])
 
     def test_req_10_missing_doc(self):
         cwl_objects: List[cwl_v1_2.Workflow] = [
@@ -453,7 +457,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertFalse(check_eoap_requirement_10(cwl_objects))
+        self.assertFalse(check_eoap_requirement_10(cwl_objects)[0])
 
     def test_req_10_complete_input_fields(self):
         cwl_objects: List[cwl_v1_2.Workflow] = [
@@ -477,7 +481,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertTrue(check_eoap_requirement_10(cwl_objects))
+        self.assertTrue(check_eoap_requirement_10(cwl_objects)[0])
 
     def test_req_10_list_contains_only_valid(self):
         cwl_objects: List[cwl_v1_2.Workflow] = [
@@ -519,7 +523,7 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertTrue(check_eoap_requirement_10(cwl_objects))
+        self.assertTrue(check_eoap_requirement_10(cwl_objects)[0])
 
     def test_req_10_list_contains_one_invalid(self):
         cwl_objects: List[cwl_v1_2.Workflow] = [
@@ -555,42 +559,42 @@ class EoapAcceptanceTest(TestCase):
             ),
         ]
 
-        self.assertFalse(check_eoap_requirement_10(cwl_objects))
+        self.assertFalse(check_eoap_requirement_10(cwl_objects)[0])
 
     # Requirement 11: req/app-pck/metadata
     def test_req_11_does_not_accept_list(self):
-        self.assertFalse(check_eoap_requirement_11([]))
+        self.assertFalse(check_eoap_requirement_11([])[0])
 
     def test_req_11_does_not_accept_set(self):
-        self.assertFalse(check_eoap_requirement_11({}))
+        self.assertFalse(check_eoap_requirement_11({})[0])
 
     def test_req_11_does_not_accept_int(self):
-        self.assertFalse(check_eoap_requirement_11(1))
+        self.assertFalse(check_eoap_requirement_11(1)[0])
 
     def test_req_11_does_not_accept_float(self):
-        self.assertFalse(check_eoap_requirement_11(3.141))
+        self.assertFalse(check_eoap_requirement_11(3.141)[0])
 
     def test_req_11_does_not_accept_bool(self):
-        self.assertFalse(check_eoap_requirement_11(True))
+        self.assertFalse(check_eoap_requirement_11(True)[0])
 
     def test_req_11_does_not_accept_string(self):
-        self.assertFalse(check_eoap_requirement_11(""))
+        self.assertFalse(check_eoap_requirement_11("")[0])
 
     def test_req_11_does_not_accept_none(self):
-        self.assertFalse(check_eoap_requirement_11(None))
+        self.assertFalse(check_eoap_requirement_11(None)[0])
 
     def test_req_11_does_not_accept_object(self):
-        self.assertFalse(check_eoap_requirement_11(object))
+        self.assertFalse(check_eoap_requirement_11(object)[0])
 
     def test_req_11_missing_namespaces(self):
         test_input: dict = {"some_key": "some_value", "another_key": 1}
 
-        self.assertFalse(check_eoap_requirement_11(test_input))
+        self.assertFalse(check_eoap_requirement_11(test_input)[0])
 
     def test_namespaces_is_dict(self):
         test_input: dict = {"some_key": "some_value", "$namespaces": 1}
 
-        self.assertFalse(check_eoap_requirement_11(test_input))
+        self.assertFalse(check_eoap_requirement_11(test_input)[0])
 
     def test_req_11_missing_schema_org(self):
         test_input: dict = {
@@ -598,7 +602,7 @@ class EoapAcceptanceTest(TestCase):
             "$namespaces": {"s": "another_value"},
         }
 
-        self.assertFalse(check_eoap_requirement_11(test_input))
+        self.assertFalse(check_eoap_requirement_11(test_input)[0])
 
     def test_req_11_missing_version_tag(self):
         test_input: dict = {
@@ -606,7 +610,7 @@ class EoapAcceptanceTest(TestCase):
             "$namespaces": {"s": "https://schema.org"},
         }
 
-        self.assertFalse(check_eoap_requirement_11(test_input))
+        self.assertFalse(check_eoap_requirement_11(test_input)[0])
 
     def test_req_11_present_version_tag(self):
         test_input: dict = {
@@ -615,7 +619,7 @@ class EoapAcceptanceTest(TestCase):
             "s:version": "1.0.0",
         }
 
-        self.assertTrue(check_eoap_requirement_11(test_input))
+        self.assertTrue(check_eoap_requirement_11(test_input)[0])
 
     def test_req_11_schema_org_trailing_slash(self):
         test_input: dict = {
@@ -624,4 +628,4 @@ class EoapAcceptanceTest(TestCase):
             "s:version": "1.0.0",
         }
 
-        self.assertTrue(check_eoap_requirement_11(test_input))
+        self.assertTrue(check_eoap_requirement_11(test_input)[0])
