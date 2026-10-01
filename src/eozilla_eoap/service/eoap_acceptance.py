@@ -50,7 +50,7 @@ async def load_and_validate_from_body(request: Request) -> dict:
             type_id="bad-request",
         )
 
-    validity = _is_valid_as_eoap(loaded_cwl)
+    is_valid, validation_details = _is_valid_as_eoap(loaded_cwl)
     if not validity[0]:
         raise ServiceException(
             status_code=422,
@@ -151,7 +151,7 @@ def _is_valid_as_eoap(content: dict) -> tuple[bool, list[str]]:
     Returns:
         tuple: first element is a bool, True if EOAP is valid, False otherwise.
                Second element is a list of strings giving details of validation
-               failure if first element is False
+               failure if first element is False, ``None`` otherwise.
     """
     cwl_object = parser.load_document(content, load_all=True)
 
