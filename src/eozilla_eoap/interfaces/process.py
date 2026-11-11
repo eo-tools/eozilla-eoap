@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from gavicore.models import ProcessDescription
+from gavicore.models.core import ProcessDescription
 from pydantic import BaseModel
 
 

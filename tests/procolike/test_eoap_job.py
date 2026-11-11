@@ -2,7 +2,7 @@ from pathlib import Path
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
-from gavicore.models import JobResults, JobStatus, ProcessRequest
+from gavicore.models.core import JobResults, JobStatus, ProcessRequest
 from procodile.job import JobCancelledException
 
 from eozilla_eoap.interfaces import Runner

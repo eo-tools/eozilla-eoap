@@ -15,7 +15,7 @@ from unittest import IsolatedAsyncioTestCase, TestCase
 import fastapi
 import pytest
 import yaml
-from gavicore.models import (
+from gavicore.models.core import (
     Capabilities,
     ConformanceDeclaration,
     JobInfo,
