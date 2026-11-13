@@ -71,7 +71,6 @@ markdown_extensions:
   - footnotes
 
 extra:
-  mermaid: true
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/eo-tools/eozilla-eoap
@@ -84,8 +83,6 @@ extra:
 plugins:
   - search
   - autorefs
-  - mermaid2:
-      version: 11.14.0
   - mkdocstrings:
       handlers:
         python:
