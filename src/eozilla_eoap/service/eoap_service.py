@@ -11,13 +11,13 @@ from uuid import uuid4
 import fastapi
 import yaml
 from fastapi import Request, Response
-from gavicore.dru_models import (
+from gavicore.models.dru import (
     CwlDescription,
     OgcApplicationPackage,
     OgcApplicationPackageProcessDescription,
 )
-from gavicore.dru_service import DruService
-from gavicore.models import (
+from gavicore.service.dru import DruService
+from gavicore.models.core import (
     JobInfo,
     JobList,
     JobResults,

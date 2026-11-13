@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal, Tuple, get_origin
 
 from cwl_utils import errors, parser
-from gavicore.models import (
+from gavicore.models.core import (
     DataType,
     DescriptionType,
     InputDescription,
