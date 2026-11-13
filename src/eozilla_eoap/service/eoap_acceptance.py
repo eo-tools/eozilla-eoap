@@ -54,8 +54,7 @@ async def load_and_validate_from_body(request: Request) -> dict:
     if not is_valid:
         raise ServiceException(
             status_code=422,
-            detail="Supplied EOAP is not valid. Failed requirements: "
-            + str(", ".join(validation_details)),
+            detail=f"Supplied EOAP is not valid. Failed requirements: {', '.join(validation_details)}",
             type_id="bad-request",
         )
 
