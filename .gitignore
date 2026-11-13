@@ -1,3 +1,6 @@
+# Downloaded assets
+docs/assets/downloaded/fonts/*.ttf
+
 # Local non-project files
 registry/
 runs/

@@ -28,8 +28,7 @@ nav:
 
 theme:
   name: material
-  # logo: assets/logo.png
-  # favicon: assets/logo.ico
+  font: false
   palette:
     # Palette toggle for light mode
     - scheme: default
@@ -76,6 +75,11 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/eo-tools/eozilla-eoap
+  footer_links:
+    - text: Imprint
+      href: https://www.brockmann-consult.de/imprint/
+    - text: Privacy Policy
+      href: https://www.brockmann-consult.de/privacy-policy-documentation-pages/
 
 plugins:
   - search
@@ -111,3 +115,7 @@ plugins:
             #      schema: true
 extra_css:
   - overrides/css/custom.css
+  - stylesheet/extra.css
+
+hooks:
+  - docs/hooks/download_fonts.py
