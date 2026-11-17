@@ -54,8 +54,8 @@ async def load_and_validate_from_body(request: Request) -> dict:
     if not is_valid:
         raise ServiceException(
             status_code=422,
-            detail="Supplied EOAP is not valid. Failed requirements: " +
-                   str(", ".join(validation_details)), type_id="bad-request"
+            detail=f"Supplied EOAP is not valid. Failed requirements: {', '.join(validation_details)}",
+            type_id="bad-request",
         )
 
     return loaded_cwl
@@ -163,6 +163,7 @@ def _is_valid_as_eoap(content: dict) -> tuple[bool, list[str]]:
         "11": check_eoap_requirement_11(content),
     }
     all_passed = all(r[0] for r in results.values())
+
     def make_message(req, detail):
         return f"{req}: {detail}" if detail else req
 
@@ -229,7 +230,7 @@ def check_eoap_requirement_08(cwl_object: list) -> tuple[bool, str | None]:
         all_have_base_command,
         all_have_inputs,
         all_have_requirements,
-        all_have_docker_requirement
+        all_have_docker_requirement,
     ]
     names = ["id", "baseCommand", "inputs", "requirements", "DockerRequirement"]
     message = ", ".join([names[i] for i in range(len(checks)) if not checks[i]])
@@ -326,4 +327,3 @@ def check_eoap_requirement_11(cwl_object: dict) -> tuple[bool, str | None]:
         return False, f"No {schema_org_key}:version specified."
 
     return True, None
-

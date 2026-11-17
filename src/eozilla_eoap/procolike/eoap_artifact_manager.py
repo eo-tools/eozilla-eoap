@@ -11,7 +11,7 @@ from urllib.request import pathname2url, url2pathname
 
 import pystac
 import requests
-from gavicore.models import Link
+from gavicore.models.core import Link
 from pydantic import AnyUrl, BaseModel, FileUrl, HttpUrl
 from pystac import STACObject
 from pystac.asset import Asset

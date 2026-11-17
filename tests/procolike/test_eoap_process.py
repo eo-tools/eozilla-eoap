@@ -13,7 +13,7 @@ from cwl_utils.parser.cwl_v1_2 import (
     WorkflowInputParameter,
     WorkflowOutputParameter,
 )
-from gavicore.models import Schema
+from gavicore.models.core import Schema
 from pydantic import BaseModel, Field
 
 from eozilla_eoap.procolike.eoap_process import (
