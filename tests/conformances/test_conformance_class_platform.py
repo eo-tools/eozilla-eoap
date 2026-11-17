@@ -339,6 +339,12 @@ class ConformanceClassPlatformStagedInputsTest(TestCase):
 
     def setUp(self):
         with open(Path(self.static_resources_path, "platform-stac-in.cwl"), "r") as f:
+            # extract default argument for possible error message in `test_abstract_test_12`
+            self.default_url = yaml.safe_load(f)["$graph"][0]["inputs"]["stac"][
+                "default"
+            ]["path"]
+            f.seek(0)
+
             self.client.post(
                 "/processes",
                 content=f.read(),
@@ -356,10 +362,11 @@ class ConformanceClassPlatformStagedInputsTest(TestCase):
     def test_abstract_test_11(self):
         self.skipTest(
             (
-                "The requested STAC Extension (single-file-stac) is deprecated,"
-                "closest replacement is the STAC ItemCollection as it also maps "
-                "to GeoJSON FeatureCollections. The implementation accpets other"
-                "STAC inputs as well as per BP document."
+                "The requested STAC Extension (single-file-stac) is deprecated."
+                "The closest replacement is the STAC ItemCollection as it also "
+                "maps to GeoJSON FeatureCollections. The implementation accpets "
+                "other STAC inputs as well as per the 'OGC Best Practice for "
+                "Earth Observation Application Package' document."
             )
         )
 
@@ -385,7 +392,21 @@ class ConformanceClassPlatformStagedInputsTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
         response_body = response.json()
-        self.assertEqual(response_body.get("status"), "successful")
+        self.assertEqual(
+            response_body.get("status"),
+            "successful",
+            msg=(
+                "Expected no difference between remote and local STAC entites. "
+                f"It was observerd, that the remote data at {self.default_url} "
+                "sporadically updates versions of used STAC extensions. "
+                "Compare the above-linked file to the local copy at "
+                "`tests/resources/reference-stac` or take a look at the "
+                "(possibly newly created) directory `eoap-service`. The "
+                f"corresponding job Id is {job_id}.\n"
+                "This conformance test will likely be updated in the future "
+                "to remedy dependencies on external resources!",
+            ),
+        )
 
         self.client.delete(f"/jobs/{job_id}")
 

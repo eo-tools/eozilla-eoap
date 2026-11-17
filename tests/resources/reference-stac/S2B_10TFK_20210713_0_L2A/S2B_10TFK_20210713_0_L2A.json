@@ -2,13 +2,13 @@
   "type": "Feature",
   "stac_version": "1.1.0",
   "stac_extensions": [
-    "https://stac-extensions.github.io/grid/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/grid/v1.1.0/schema.json",
     "https://stac-extensions.github.io/mgrs/v1.0.0/schema.json",
     "https://stac-extensions.github.io/view/v1.0.0/schema.json",
     "https://stac-extensions.github.io/processing/v1.1.0/schema.json",
     "https://stac-extensions.github.io/raster/v1.1.0/schema.json",
-    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/projection/v1.0.0/schema.json"
+    "https://stac-extensions.github.io/eo/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/projection/v2.0.0/schema.json"
   ],
   "id": "S2B_10TFK_20210713_0_L2A",
   "geometry": {
@@ -52,7 +52,6 @@
       "msi"
     ],
     "eo:cloud_cover": 0.076742,
-    "proj:epsg": 32610,
     "mgrs:utm_zone": 10,
     "mgrs:latitude_band": "T",
     "mgrs:grid_square": "FK",
@@ -89,7 +88,8 @@
     "processing:software": {
       "sentinel2-to-stac": "0.1.0"
     },
-    "updated": "2022-11-06T08:58:58.497Z"
+    "updated": "2022-11-06T08:58:58.497Z",
+    "proj:code": "EPSG:32610"
   },
   "links": [
     {
