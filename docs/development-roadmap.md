@@ -1,5 +1,15 @@
 This page outlines planned future additions and changes to `eozilla-eoap`.
 
+### General Project Improvements
+
+Next to the *content-related* plans layed out below, there exist more general changes to the project/repository structure that should be addressed:
+
+- Enable Github pages online documentation
+- Adopt templates for bug reports, feature requests and pull requests from the core Eozilla repository
+- Adopt change log, i.e. a `CHANGES.md` file to track development progress
+- Adopt versioning scheme and subsequently enable package building and publishing on PyPi and Conda
+- Possibly add Github Actions workflows for CI and CD
+
 ### Harmonization with the core Eozilla Repository
 
 During development it became clear that some core classes have incompatible method signatures, store arguments in representations not applicable to this project or are missing/have a surplus of methods. This resulted in some code *duplication* between the [core Eozilla](https://github.com/eo-tools/eozilla) project and the EOAP extension: 
