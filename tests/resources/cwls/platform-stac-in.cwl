@@ -49,4 +49,4 @@ $graph:
         outputEval: $(runtime.exitCode)
   requirements:
     DockerRequirement:
-      dockerPull: quay.io/bcdev/stac-in-image:0.0.1
+      dockerPull: quay.io/bcdev/stac-in-image:0.0.2
