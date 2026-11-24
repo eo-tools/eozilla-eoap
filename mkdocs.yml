@@ -11,6 +11,7 @@ copyright: Copyright &copy; 2026 Eozilla Team
 nav:
   - Overview: index.md
   - Restrictions: restrictions.md
+  - Next Steps for `eozilla-eoap`: development-roadmap.md
   - Service:
     - Overview: service/index.md
     - Api Reference: service/api.md
