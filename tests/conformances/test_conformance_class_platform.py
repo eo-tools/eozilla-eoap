@@ -364,7 +364,7 @@ class ConformanceClassPlatformStagedInputsTest(TestCase):
             (
                 "The requested STAC Extension (single-file-stac) is deprecated."
                 "The closest replacement is the STAC ItemCollection as it also "
-                "maps to GeoJSON FeatureCollections. The implementation accpets "
+                "maps to GeoJSON FeatureCollections. The implementation accepts "
                 "other STAC inputs as well as per the 'OGC Best Practice for "
                 "Earth Observation Application Package' document."
             )
@@ -397,7 +397,7 @@ class ConformanceClassPlatformStagedInputsTest(TestCase):
             "successful",
             msg=(
                 "Expected no difference between remote and local STAC entites. "
-                f"It was observerd, that the remote data at {self.default_url} "
+                f"It has been observed, that the remote data at {self.default_url} "
                 "sporadically updates versions of used STAC extensions. "
                 "Compare the above-linked file to the local copy at "
                 "`tests/resources/reference-stac` or take a look at the "
