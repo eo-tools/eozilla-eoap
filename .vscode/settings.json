@@ -1,6 +1,6 @@
 {
     // Python
-    "python.defaultInterpreterPath": "${workspaceFolder}/.pixi/env/bin/python",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.pixi/envs/default/bin/python",
 
     // isort
     "isort.importStrategy": "fromEnvironment",
@@ -25,6 +25,6 @@
 
     // Discover tests in project
     "python.testing.pytestArgs": [
-        "**/tests"
+        "./tests"
     ]
 }
