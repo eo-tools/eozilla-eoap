@@ -8,7 +8,8 @@ from cwl_utils.types import CWLObjectType
 from cwltool.context import RuntimeContext
 from cwltool.errors import WorkflowException
 from cwltool.executors import SingleJobExecutor
-from cwltool.factory import Factory, Callable as CwlCallable
+from cwltool.factory import Callable as CwlCallable
+from cwltool.factory import Factory
 from cwltool.process import Process
 from cwltool.utils import JobsGeneratorType, JobsType, OutputCallbackType
 from procodile.job import JobCancelledException, NullJobContext
@@ -18,6 +19,8 @@ from eozilla_eoap.procolike import (
     EoapProcess,
     Job,
 )
+
+from .configuration import RuntimeContextConfiguration
 
 
 class CwltoolLogger:
@@ -178,6 +181,13 @@ class CallbackExecutor(SingleJobExecutor):
 class CwlToolRunner(Runner):
     """Implementation of the interfaces mandated by [`Runner`][eozilla_eoap.interfaces.Runner]."""
 
+    def __init__(
+        self, runtime_configuration: RuntimeContextConfiguration | None = None
+    ):
+        self.runtime_configuration: RuntimeContextConfiguration = (
+            runtime_configuration or RuntimeContextConfiguration()
+        )
+
     def run(
         self,
         job_id: str,
@@ -242,7 +252,11 @@ class CwlToolRunner(Runner):
             redirect_stdout(proc_stdout),
             redirect_stderr(proc_stderr),
         ):
-            runtime_context: RuntimeContext = RuntimeContext(
+            user_runtime_options: dict[str, Any] = (
+                self.runtime_configuration.model_dump(exclude_defaults=True)
+            )
+
+            user_runtime_options.update(
                 {
                     "outdir": str(out_dir),
                     # NOTE: Setting strict memory limit to false to allow processes to simply not specify resource
@@ -253,6 +267,8 @@ class CwlToolRunner(Runner):
                     "strict_cpu_limit": True,
                 }
             )
+
+            runtime_context: RuntimeContext = RuntimeContext(user_runtime_options)
 
             factory: Factory = Factory(
                 executor=CallbackExecutor(context),

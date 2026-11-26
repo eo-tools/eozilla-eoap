@@ -8,7 +8,12 @@ from cwltool.errors import WorkflowException
 from cwltool.executors import SingleJobExecutor
 from procodile.job import JobCancelledException, NullJobContext
 
-from eozilla_eoap.cwltool import CallbackExecutor, CwltoolLogger, CwlToolRunner
+from eozilla_eoap.cwltool import (
+    CallbackExecutor,
+    CwltoolLogger,
+    CwlToolRunner,
+    RuntimeContextConfiguration,
+)
 from eozilla_eoap.procolike.eoap_job import EoapProcess, Job
 
 
@@ -543,3 +548,98 @@ class RunnerTest(TestCase):
 
         self.mock_factory.make.assert_called_once_with(process_id)
         process_callable.assert_called_once_with(**process_arguments)
+
+
+class RunnerWithConfigurationTest(TestCase):
+    def setUp(self):
+        factory_patcher = patch("eozilla_eoap.cwltool.runner.Factory", autospec=True)
+        self.addCleanup(factory_patcher.stop)
+        self.mock_factory_class = factory_patcher.start()
+        self.mock_factory = self.mock_factory_class.return_value
+
+        callback_executor_patcher = patch(
+            "eozilla_eoap.cwltool.runner.CallbackExecutor", autospec=True
+        )
+        self.addCleanup(callback_executor_patcher.stop)
+        self.mock_callback_executor_class = callback_executor_patcher.start()
+        self.mock_callback_executor = self.mock_callback_executor_class.return_value
+
+        runtime_context_patcher = patch(
+            "eozilla_eoap.cwltool.runner.RuntimeContext", autospec=True
+        )
+        self.addCleanup(runtime_context_patcher.stop)
+        self.mock_runtime_context_class = runtime_context_patcher.start()
+        self.mock_runtime_context = self.mock_runtime_context_class.return_value
+
+        logger_patcher = patch(
+            "eozilla_eoap.cwltool.runner.CwltoolLogger", autospec=True
+        )
+        self.addCleanup(logger_patcher.stop)
+        self.mock_logger_class = logger_patcher.start()
+        self.mock_logger = self.mock_logger_class.return_value
+
+        self.runner = CwlToolRunner(
+            RuntimeContextConfiguration(
+                force_docker_pull=True,
+                singularity=True,
+            )
+        )
+
+        self.job = Mock(spec=Job)
+
+    @patch("builtins.open", new_callable=mock_open)
+    def test_run_success(self, mocked_open):
+        process = Mock(spec=EoapProcess)
+        process.source = "file://some/path/to/workflow/source"
+        process.description.id = "echo-workflow"
+        process_id = "file://some/path/to/workflow/source#echo-workflow"
+
+        expected_result = {
+            "hello_out": {
+                "class": "File",
+                "path": "/tmp/hello.txt",  # noqa: S108
+            }
+        }
+
+        process_callable = Mock()
+        process_callable.return_value = expected_result
+        self.mock_factory.make.return_value = process_callable
+
+        temporary_output_directory = Path("/tmp/output")  # noqa: S108
+        process_arguments = {"message": "Hello World"}
+
+        result = self.runner.run(
+            "job-1",
+            process=process,
+            process_arguments=process_arguments,
+            temporary_output_directory=temporary_output_directory,
+            context=self.job,
+        )
+
+        self.mock_logger_class.assert_called_once_with(
+            str(Path(temporary_output_directory, "log", "run.log"))
+        )
+        self.mock_logger.__enter__.assert_called_once()
+        self.mock_logger.__exit__.assert_called_once()
+
+        self.mock_callback_executor_class.assert_called_once()
+
+        self.mock_runtime_context_class.assert_called_once_with(
+            {
+                "force_docker_pull": True,
+                "singularity": True,
+                "outdir": str(Path(temporary_output_directory, "out")),
+                "strict_memory_limit": False,
+                "strict_cpu_limit": True,
+            }
+        )
+
+        self.mock_factory_class.assert_called_once_with(
+            executor=self.mock_callback_executor,
+            runtime_context=self.mock_runtime_context,
+        )
+
+        self.mock_factory.make.assert_called_once_with(process_id)
+        process_callable.assert_called_once_with(**process_arguments)
+
+        self.assertEqual(result, expected_result)
